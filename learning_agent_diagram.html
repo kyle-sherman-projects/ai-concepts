@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Learning Agents - Interactive Visualization</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #2d3748;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #718096;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #e2e8f0;
+            flex-wrap: wrap;
+        }
+        
+        .tab {
+            padding: 12px 24px;
+            background: #f7fafc;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            border-radius: 8px 8px 0 0;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+        
+        .tab:hover {
+            background: #edf2f7;
+        }
+        
+        .tab.active {
+            background: #667eea;
+            color: white;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .diagram-container {
+            background: #f7fafc;
+            border-radius: 10px;
+            padding: 30px;
+            margin-bottom: 30px;
+            position: relative;
+            overflow: visible;
+        }
+        
+        svg {
+            width: 100%;
+            height: auto;
+        }
+        
+        .component-box {
+            fill: #ffffff;
+            stroke: #4a5568;
+            stroke-width: 2;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .component-box:hover {
+            stroke: #667eea;
+            stroke-width: 3;
+            filter: drop-shadow(0 6px 12px rgba(102,126,234,0.4));
+        }
+        
+        .component-box.active {
+            fill: #ebf4ff;
+            stroke: #667eea;
+            stroke-width: 3;
+        }
+        
+        .learning-element { fill: #fef5e7; stroke: #f39c12; }
+        .performance-element { fill: #e8f5e9; stroke: #27ae60; }
+        .critic { fill: #fce4ec; stroke: #e74c3c; }
+        .problem-generator { fill: #e3f2fd; stroke: #3498db; }
+        .environment { fill: #f3e5f5; stroke: #9b59b6; }
+        
+        .component-text {
+            font-size: 16px;
+            font-weight: 600;
+            fill: #2d3748;
+            text-anchor: middle;
+            pointer-events: none;
+        }
+        
+        .component-subtext {
+            font-size: 12px;
+            fill: #718096;
+            text-anchor: middle;
+            pointer-events: none;
+        }
+        
+        .arrow {
+            stroke: #4a5568;
+            stroke-width: 2;
+            fill: none;
+            marker-end: url(#arrowhead);
+        }
+        
+        .arrow-label {
+            font-size: 11px;
+            fill: #4a5568;
+            font-weight: 500;
+        }
+        
+        .info-panel {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            border: 2px solid #e2e8f0;
+            margin-top: 20px;
+        }
+        
+        .info-panel h3 {
+            color: #2d3748;
+            margin-bottom: 10px;
+            font-size: 1.3em;
+        }
+        
+        .info-panel p {
+            color: #4a5568;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+        
+        .info-panel ul {
+            margin-left: 20px;
+            color: #4a5568;
+            line-height: 1.8;
+        }
+        
+        .example-box {
+            background: #f7fafc;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        
+        .example-box strong {
+            color: #667eea;
+        }
+        
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .comparison-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            border: 2px solid #e2e8f0;
+            transition: all 0.3s;
+        }
+        
+        .comparison-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            border-color: #667eea;
+        }
+        
+        .comparison-card h4 {
+            color: #2d3748;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+        
+        .comparison-card ul {
+            margin-left: 20px;
+            color: #4a5568;
+            line-height: 1.8;
+        }
+        
+        .highlight {
+            background: #fef5e7;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: 600;
+        }
+        
+        .animate-flow {
+            animation: flowAnimation 2s ease-in-out infinite;
+        }
+        
+        @keyframes flowAnimation {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 Learning Agents Explained</h1>
+        <p class="subtitle">Interactive visualization of Russell & Norvig's Learning Agent Architecture</p>
+        
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('overview')">Overview</button>
+            <button class="tab" onclick="showTab('components')">Component Details</button>
+            <button class="tab" onclick="showTab('examples')">Real Examples</button>
+            <button class="tab" onclick="showTab('comparison')">Non-Learning vs Learning</button>
+        </div>
+        
+        <!-- Overview Tab -->
+        <div id="overview" class="tab-content active">
+            <div class="diagram-container">
+                <svg viewBox="0 0 1200 700" id="main-diagram">
+                    <defs>
+                        <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                            <polygon points="0 0, 10 3, 0 6" fill="#4a5568" />
+                        </marker>
+                    </defs>
+                    
+                    <!-- Environment -->
+                    <rect class="component-box environment" x="450" y="30" width="300" height="80" rx="10"/>
+                    <text class="component-text" x="600" y="65">Environment</text>
+                    <text class="component-subtext" x="600" y="85">The world the agent operates in</text>
+                    
+                    <!-- Performance Element -->
+                    <rect class="component-box performance-element" x="450" y="250" width="300" height="100" rx="10"/>
+                    <text class="component-text" x="600" y="290">Performance Element</text>
+                    <text class="component-subtext" x="600" y="310">Selects actions</text>
+                    
+                    <!-- Learning Element -->
+                    <rect class="component-box learning-element" x="50" y="450" width="300" height="100" rx="10"/>
+                    <text class="component-text" x="200" y="490">Learning Element</text>
+                    <text class="component-subtext" x="200" y="510">Makes improvements</text>
+                    
+                    <!-- Critic -->
+                    <rect class="component-box critic" x="450" y="450" width="300" height="100" rx="10"/>
+                    <text class="component-text" x="600" y="490">Critic</text>
+                    <text class="component-subtext" x="600" y="510">Evaluates performance</text>
+                    
+                    <!-- Problem Generator -->
+                    <rect class="component-box problem-generator" x="850" y="450" width="300" height="100" rx="10"/>
+                    <text class="component-text" x="1000" y="490">Problem Generator</text>
+                    <text class="component-subtext" x="1000" y="510">Suggests exploration</text>
+                    
+                    <!-- Arrows with labels -->
+                    <!-- Environment to Performance: Percepts -->
+                    <path class="arrow" d="M 600 110 L 600 250" />
+                    <text class="arrow-label" x="620" y="180">Percepts</text>
+                    
+                    <!-- Performance to Environment: Actions -->
+                    <path class="arrow" d="M 650 250 Q 750 180 700 110" />
+                    <text class="arrow-label" x="750" y="180">Actions</text>
+                    
+                    <!-- Environment to Critic: Performance Standard -->
+                    <path class="arrow" d="M 700 110 Q 800 280 700 450" />
+                    <text class="arrow-label" x="820" y="280">Performance</text>
+                    <text class="arrow-label" x="820" y="295">Standard</text>
+                    
+                    <!-- Critic to Learning Element -->
+                    <path class="arrow" d="M 450 500 L 350 500" />
+                    <text class="arrow-label" x="370" y="490">Feedback</text>
+                    
+                    <!-- Learning Element to Performance Element -->
+                    <path class="arrow" d="M 200 450 L 500 350" />
+                    <text class="arrow-label" x="280" y="390">Changes</text>
+                    
+                    <!-- Problem Generator to Performance Element -->
+                    <path class="arrow" d="M 1000 450 L 700 350" />
+                    <text class="arrow-label" x="900" y="390">Exploratory</text>
+                    <text class="arrow-label" x="900" y="405">Actions</text>
+                    
+                    <!-- Performance Element to Critic: Learning Goals -->
+                    <path class="arrow" d="M 650 350 L 550 450" />
+                    <text class="arrow-label" x="570" y="410">Learning</text>
+                    <text class="arrow-label" x="570" y="425">Goals</text>
+                </svg>
+            </div>
+            
+            <div class="info-panel">
+                <h3>How Learning Agents Work</h3>
+                <p>A learning agent has <strong>four key components</strong> that work together to improve performance over time:</p>
+                <ul>
+                    <li><span class="highlight">Performance Element</span> - Does the actual work (like a non-learning agent)</li>
+                    <li><span class="highlight">Learning Element</span> - Improves the performance element based on feedback</li>
+                    <li><span class="highlight">Critic</span> - Evaluates how well the agent is doing using a fixed performance standard</li>
+                    <li><span class="highlight">Problem Generator</span> - Suggests exploratory actions to discover new knowledge</li>
+                </ul>
+                
+                <div class="example-box">
+                    <strong>Key Insight:</strong> The performance element is what gets executed, but the learning element is what makes the agent better over time. The critic tells the learning element how to improve, while the problem generator ensures the agent doesn't get stuck doing only familiar things.
+                </div>
+            </div>
+        </div>
+        
+        <!-- Components Tab -->
+        <div id="components" class="tab-content">
+            <div class="comparison-grid">
+                <div class="comparison-card">
+                    <h4>🎯 Performance Element</h4>
+                    <p><strong>Role:</strong> Selects external actions</p>
+                    <p><strong>Function:</strong> This is the "doing" part - it's what actually interacts with the environment</p>
+                    <ul>
+                        <li>Maps percepts to actions</li>
+                        <li>Can be any agent type (reflex, goal-based, utility-based)</li>
+                        <li>Gets modified by the learning element</li>
+                    </ul>
+                    <div class="example-box">
+                        <strong>Example:</strong> In a chess program, this is the part that actually selects which move to make
+                    </div>
+                </div>
+                
+                <div class="comparison-card">
+                    <h4>📚 Learning Element</h4>
+                    <p><strong>Role:</strong> Makes improvements</p>
+                    <p><strong>Function:</strong> The "improvement" part - it modifies the performance element to perform better</p>
+                    <ul>
+                        <li>Receives feedback from critic</li>
+                        <li>Updates knowledge, rules, or models</li>
+                        <li>Can modify any component of the performance element</li>
+                    </ul>
+                    <div class="example-box">
+                        <strong>Example:</strong> After losing chess games, this updates the evaluation function to avoid similar mistakes
+                    </div>
+                </div>
+                
+                <div class="comparison-card">
+                    <h4>⚖️ Critic</h4>
+                    <p><strong>Role:</strong> Provides feedback</p>
+                    <p><strong>Function:</strong> The "evaluator" - tells the learning element how well the agent is doing</p>
+                    <ul>
+                        <li>Uses fixed performance standard (doesn't learn)</li>
+                        <li>Observes agent's actions and their results</li>
+                        <li>Provides feedback signal to learning element</li>
+                    </ul>
+                    <div class="example-box">
+                        <strong>Example:</strong> In chess, this might say "you lost because you didn't protect your queen" (not just "you lost")
+                    </div>
+                </div>
+                
+                <div class="comparison-card">
+                    <h4>🔬 Problem Generator</h4>
+                    <p><strong>Role:</strong> Suggests exploration</p>
+                    <p><strong>Function:</strong> The "experimenter" - encourages trying new things to learn more</p>
+                    <ul>
+                        <li>Proposes exploratory actions</li>
+                        <li>Balances exploitation vs exploration</li>
+                        <li>Leads to new, informative experiences</li>
+                    </ul>
+                    <div class="example-box">
+                        <strong>Example:</strong> In chess, might suggest "try this unusual opening to see how opponents respond" even if it's not the highest-rated move
+                    </div>
+                </div>
+            </div>
+            
+            <div class="info-panel" style="margin-top: 30px;">
+                <h3>💡 Important Distinctions</h3>
+                <p><strong>Performance Element vs Learning Element:</strong></p>
+                <ul>
+                    <li><span class="highlight">Performance Element</span> = What the agent does RIGHT NOW</li>
+                    <li><span class="highlight">Learning Element</span> = How the agent gets BETTER over time</li>
+                </ul>
+                
+                <p style="margin-top: 15px;"><strong>Critic vs Performance Standard:</strong></p>
+                <ul>
+                    <li>The <span class="highlight">critic</span> is a component inside the agent</li>
+                    <li>The <span class="highlight">performance standard</span> is the fixed measure it uses (comes from outside, doesn't change)</li>
+                    <li>The critic interprets the performance standard to give useful feedback</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Examples Tab -->
+        <div id="examples" class="tab-content">
+            <h2 style="margin-bottom: 20px; color: #2d3748;">Real-World Learning Agent Examples</h2>
+            
+            <div class="comparison-card" style="margin-bottom: 20px;">
+                <h4>🚗 Self-Driving Car Learning System</h4>
+                <ul>
+                    <li><strong>Environment:</strong> Roads, traffic, pedestrians, weather conditions</li>
+                    <li><strong>Performance Element:</strong> Neural network that decides steering, acceleration, braking</li>
+                    <li><strong>Critic:</strong> Evaluates whether actions were safe and efficient (Did we stay in lane? Did we brake smoothly?)</li>
+                    <li><strong>Learning Element:</strong> Updates neural network weights based on feedback</li>
+                    <li><strong>Problem Generator:</strong> Suggests trying different routes or practicing challenging scenarios (parking, merging)</li>
+                </ul>
+                <div class="example-box">
+                    <strong>How it learns:</strong> After each trip, the critic evaluates driving quality. If the car braked too hard, the learning element adjusts the braking model. The problem generator might suggest "try this route with lots of roundabouts to practice those."
+                </div>
+            </div>
+            
+            <div class="comparison-card" style="margin-bottom: 20px;">
+                <h4>🎮 Game-Playing AI (AlphaGo)</h4>
+                <ul>
+                    <li><strong>Environment:</strong> Go board, opponent's moves</li>
+                    <li><strong>Performance Element:</strong> Policy network that selects moves</li>
+                    <li><strong>Critic:</strong> Whether the move led to winning or losing (and by how much)</li>
+                    <li><strong>Learning Element:</strong> Reinforcement learning that improves the policy based on game outcomes</li>
+                    <li><strong>Problem Generator:</strong> Self-play system that creates diverse game scenarios</li>
+                </ul>
+                <div class="example-box">
+                    <strong>How it learns:</strong> Plays thousands of games against itself. After each game, the critic says which moves were good/bad. The learning element adjusts move preferences. The problem generator ensures it doesn't just practice the same positions repeatedly.
+                </div>
+            </div>
+            
+            <div class="comparison-card" style="margin-bottom: 20px;">
+                <h4>📧 Email Spam Filter</h4>
+                <ul>
+                    <li><strong>Environment:</strong> Incoming emails</li>
+                    <li><strong>Performance Element:</strong> Classifier that labels emails as spam/not spam</li>
+                    <li><strong>Critic:</strong> User feedback (marking emails as spam or "not spam")</li>
+                    <li><strong>Learning Element:</strong> Updates classification rules based on user corrections</li>
+                    <li><strong>Problem Generator:</strong> Occasionally lets borderline emails through to see user response</li>
+                </ul>
+                <div class="example-box">
+                    <strong>How it learns:</strong> When you mark an email as spam (or not spam), that's the critic providing feedback. The learning element adjusts its rules. The problem generator occasionally lets suspicious-but-uncertain emails through to learn more about your preferences.
+                </div>
+            </div>
+            
+            <div class="comparison-card">
+                <h4>🎓 Your OULAD Project Connection</h4>
+                <ul>
+                    <li><strong>Environment:</strong> Student behaviors, VLE interactions, assessment submissions</li>
+                    <li><strong>Performance Element:</strong> Prediction model that identifies at-risk students</li>
+                    <li><strong>Critic:</strong> Actual student outcomes (pass/fail/withdraw) compared to predictions</li>
+                    <li><strong>Learning Element:</strong> Model retraining based on prediction accuracy</li>
+                    <li><strong>Problem Generator:</strong> Testing predictions at different timepoints to find optimal timing</li>
+                </ul>
+                <div class="example-box">
+                    <strong>How it learns:</strong> The system makes predictions, then actual outcomes provide feedback. If early predictions have too many false positives, the learning element adjusts. Your research on optimal timing is essentially the problem generator exploring when predictions work best!
+                </div>
+            </div>
+        </div>
+        
+        <!-- Comparison Tab -->
+        <div id="comparison" class="tab-content">
+            <h2 style="margin-bottom: 20px; color: #2d3748;">Non-Learning Agents vs Learning Agents</h2>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+                <div class="comparison-card" style="border-color: #e74c3c;">
+                    <h4>❌ Non-Learning Agent</h4>
+                    <ul>
+                        <li>Fixed behavior rules</li>
+                        <li>All knowledge from designer</li>
+                        <li>Can't adapt to new situations</li>
+                        <li>Performance doesn't improve</li>
+                        <li>Works only in anticipated scenarios</li>
+                    </ul>
+                    <div class="example-box">
+                        <strong>Example:</strong> A thermostat that turns heat on when temperature < 68°F. That's all it knows. Forever.
+                    </div>
+                </div>
+                
+                <div class="comparison-card" style="border-color: #27ae60;">
+                    <h4>✅ Learning Agent</h4>
+                    <ul>
+                        <li>Behavior improves over time</li>
+                        <li>Learns from experience</li>
+                        <li>Adapts to changing environments</li>
+                        <li>Can become expert through practice</li>
+                        <li>Handles unanticipated situations</li>
+                    </ul>
+                    <div class="example-box">
+                        <strong>Example:</strong> A smart thermostat that learns your schedule, preferences, and adjusts based on weather forecasts. Gets better over time.
+                    </div>
+                </div>
+            </div>
+            
+            <div class="info-panel">
+                <h3>Why Learning Matters</h3>
+                <p>Russell & Norvig emphasize that learning has two crucial advantages:</p>
+                
+                <div class="example-box">
+                    <strong>1. Handles Unknown Environments</strong>
+                    <p>Designers can't anticipate every situation. A learning agent can operate in initially unknown environments and figure things out through experience.</p>
+                </div>
+                
+                <div class="example-box">
+                    <strong>2. Achieves Competence Beyond Initial Design</strong>
+                    <p>The agent can become more competent than its initial knowledge allowed. This is how AlphaGo beat world champions - it learned strategies no human explicitly programmed.</p>
+                </div>
+                
+                <div class="example-box">
+                    <strong>3. Achieves Autonomy</strong>
+                    <p>From Chapter 2: "To the extent that an agent relies on prior knowledge of its designer rather than on its own percepts and learning processes, we say that the agent lacks autonomy." Learning = true autonomy.</p>
+                </div>
+            </div>
+            
+            <div class="info-panel" style="margin-top: 20px;">
+                <h3>🔑 Key Quote from Russell & Norvig</h3>
+                <blockquote style="border-left: 4px solid #667eea; padding-left: 20px; font-style: italic; color: #4a5568; margin: 20px 0;">
+                    "Learning in intelligent agents can be summarized as a process of modification of each component of the agent to bring the components into closer agreement with the available feedback information, thereby improving the overall performance of the agent."
+                </blockquote>
+                <p>Translation: Learning isn't magic - it's systematically adjusting components based on feedback to perform better.</p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function showTab(tabName) {
+            // Hide all tabs
+            const contents = document.querySelectorAll('.tab-content');
+            contents.forEach(content => content.classList.remove('active'));
+            
+            // Remove active from all buttons
+            const buttons = document.querySelectorAll('.tab');
+            buttons.forEach(button => button.classList.remove('active'));
+            
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            
+            // Activate clicked button
+            event.target.classList.add('active');
+        }
+        
+        // Add click handlers for diagram components
+        document.addEventListener('DOMContentLoaded', function() {
+            const boxes = document.querySelectorAll('.component-box');
+            boxes.forEach(box => {
+                box.addEventListener('click', function() {
+                    // Remove active from all
+                    boxes.forEach(b => b.classList.remove('active'));
+                    // Add to clicked
+                    this.classList.add('active');
+                });
+            });
+        });
+    </script>
+</body>
+</html>
