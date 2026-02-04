@@ -5,47 +5,19 @@ Interactive visual organizers for foundational AI concepts from Russell & Norvig
 ## 📋 What's Included
 
 This repository contains:
-- **Interactive Web App** (`index.html`) - Standalone HTML file with 4 visualization modes
+- **Interactive Web App** (`index.html`) - Standalone HTML file 
+- **Learning Agents** (`learning_agent_diagram.html`) - Standalone HTML file
 - **PowerPoint Presentation** (`AI_Concepts_Visual_Organizers.pptx`) - 10 professionally designed slides
 - **Study Annotations** (`AI_Modern_Approach_Ch1-3_Annotations.md`) - Detailed reference with examples and reflection space
 
 ## 🚀 Quick Start
 
 ### View Locally
-1. Download `index.html`
+1. Download `index.html` & `learning_agent_diagram.html`
 2. Open it in any modern browser (Chrome, Firefox, Safari, Edge)
 3. No installation or setup required!
 
-### Deploy to GitHub Pages
-
-#### Option 1: Simple Upload (Easiest)
-1. Go to [GitHub](https://github.com) and sign in
-2. Click the "+" in the top right → "New repository"
-3. Name it: `ai-concepts` (or any name you like)
-4. Check "Add a README file"
-5. Click "Create repository"
-6. Click "Add file" → "Upload files"
-7. Drag and drop `index.html` into the upload area
-8. Scroll down and click "Commit changes"
-9. Go to Settings → Pages (in left sidebar)
-10. Under "Source", select "main" branch
-11. Click "Save"
-12. Wait 1-2 minutes, then visit: `https://YOUR-USERNAME.github.io/ai-concepts/`
-
-#### Option 2: Using Git (For those familiar with command line)
-```bash
-# Create a new repository on GitHub first, then:
-git clone https://github.com/YOUR-USERNAME/ai-concepts.git
-cd ai-concepts
-cp /path/to/index.html .
-git add index.html
-git commit -m "Add AI concepts visualizer"
-git push origin main
-
-# Enable GitHub Pages in repository settings
-```
-
-## 🎨 Features
+## 🎨 Interactive Web App Features
 
 ### Interactive Visualizations
 The web app includes four interactive views:
@@ -69,14 +41,6 @@ The web app includes four interactive views:
    - Side-by-side algorithm comparisons
    - Search strategies trade-offs
    - Agent architecture capabilities
-
-## 📱 Device Compatibility
-
-✅ **Works on:**
-- Desktop browsers (Chrome, Firefox, Safari, Edge)
-- Tablets (iPad, Android tablets, Samsung tablets)
-- Mobile phones (iOS, Android)
-- Any device with a modern web browser
 
 ## 🎓 Educational Use
 
@@ -109,14 +73,6 @@ The markdown file provides:
 - Blank reflection column for personal notes
 - Organized by chapter (1-3)
 - Historical context and milestones
-
-## 🔗 Sharing Your Deployment
-
-Once deployed to GitHub Pages, share your link:
-- With classmates: `https://YOUR-USERNAME.github.io/ai-concepts/`
-- On social media
-- In study groups
-- Via email or messaging apps
 
 ## 🛠️ Customization
 
@@ -160,6 +116,7 @@ This educational resource is provided for academic use. The content is based on 
 - Stuart Russell and Peter Norvig for "AI: A Modern Approach"
 - Long Island University Palmer School
 - Dr. Kewei "Isaac" Li (Course Instructor)
+- Claude AI
 
 ## 📧 Contact
 
