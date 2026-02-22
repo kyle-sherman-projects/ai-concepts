@@ -74,17 +74,6 @@ All HTML files are fully standalone — no installation, no server, no dependenc
 
 ---
 
-## 🛠️ Adding New Materials
-
-To add content for a new chapter:
-
-1. Create new HTML/markdown files locally
-2. Commit and push to this repository
-3. Update the roadmap table above (🔲 → ✅)
-4. GitHub Pages reflects changes within 1–2 minutes
-
----
-
 ## 🆘 Troubleshooting
 
 **Page doesn't load on tablet** — Use Chrome or Safari with JavaScript enabled. Try clearing cache if needed.
