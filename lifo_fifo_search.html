@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LIFO vs FIFO: DFS & BFS</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=IBM+Plex+Sans:wght@300;400;600&display=swap');
+
+  :root {
+    --bg: #0d0d0f;
+    --surface: #16181c;
+    --border: #2a2d35;
+    --text: #e8e9ed;
+    --muted: #6b7280;
+    --dfs-color: #f59e0b;
+    --bfs-color: #38bdf8;
+    --lifo-color: #a78bfa;
+    --fifo-color: #34d399;
+    --goal-color: #f87171;
+    --expanded-bg: #1e2028;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'IBM Plex Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 24px;
+  }
+
+  h1 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 1.4rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+
+  .subtitle {
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-bottom: 24px;
+  }
+
+  .explanation-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 24px;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    color: #c4c7d0;
+  }
+
+  .explanation-box strong { color: var(--text); }
+  .tag-lifo { color: var(--lifo-color); font-family: 'IBM Plex Mono', monospace; font-weight: 600; }
+  .tag-fifo { color: var(--fifo-color); font-family: 'IBM Plex Mono', monospace; font-weight: 600; }
+  .tag-dfs { color: var(--dfs-color); font-family: 'IBM Plex Mono', monospace; font-weight: 600; }
+  .tag-bfs { color: var(--bfs-color); font-family: 'IBM Plex Mono', monospace; font-weight: 600; }
+
+  .controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .mode-btn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 8px 18px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.05em;
+  }
+
+  .mode-btn:hover { border-color: var(--muted); color: var(--text); }
+  .mode-btn.active-dfs { border-color: var(--dfs-color); color: var(--dfs-color); background: rgba(245,158,11,0.08); }
+  .mode-btn.active-bfs { border-color: var(--bfs-color); color: var(--bfs-color); background: rgba(56,189,248,0.08); }
+
+  .step-controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-left: auto;
+  }
+
+  .step-btn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.78rem;
+    padding: 7px 14px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .step-btn:hover:not(:disabled) { border-color: var(--text); }
+  .step-btn:disabled { opacity: 0.3; cursor: default; }
+
+  .step-counter {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--muted);
+    min-width: 60px;
+    text-align: center;
+  }
+
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  @media (max-width: 800px) { .main-grid { grid-template-columns: 1fr; } }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .panel-header {
+    padding: 10px 16px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .panel-header .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+  }
+
+  .tree-panel { padding: 20px; display: flex; justify-content: center; }
+
+  svg.tree { overflow: visible; }
+
+  .node-circle {
+    fill: var(--surface);
+    stroke: var(--border);
+    stroke-width: 1.5;
+    transition: all 0.3s;
+  }
+  .node-circle.frontier { stroke: var(--lifo-color); stroke-width: 2; fill: rgba(167,139,250,0.1); }
+  .node-circle.frontier.fifo-mode { stroke: var(--fifo-color); fill: rgba(52,211,153,0.1); }
+  .node-circle.expanded { stroke: var(--muted); fill: var(--expanded-bg); }
+  .node-circle.current { stroke-width: 2.5; fill: rgba(245,158,11,0.15); stroke: var(--dfs-color); }
+  .node-circle.current.bfs-mode { fill: rgba(56,189,248,0.15); stroke: var(--bfs-color); }
+  .node-circle.goal-found { stroke: var(--goal-color); fill: rgba(248,113,113,0.2); stroke-width: 2.5; }
+
+  .node-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    fill: var(--text);
+    text-anchor: middle;
+    dominant-baseline: central;
+    pointer-events: none;
+  }
+  .node-label.expanded-label { fill: var(--muted); }
+  .node-label.current-label { fill: var(--dfs-color); }
+  .node-label.current-label.bfs-mode { fill: var(--bfs-color); }
+  .node-label.goal-label { fill: var(--goal-color); }
+
+  .tree-edge {
+    stroke: var(--border);
+    stroke-width: 1.5;
+    transition: stroke 0.3s;
+  }
+  .tree-edge.active { stroke: var(--muted); }
+
+  /* Queue/Stack visualization */
+  .queue-panel { padding: 16px; }
+
+  .struct-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    margin-bottom: 10px;
+  }
+
+  .struct-container {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    min-height: 48px;
+    flex-wrap: wrap;
+  }
+
+  .struct-item {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 8px 14px;
+    border-radius: 4px;
+    border: 1px solid;
+    transition: all 0.3s;
+    position: relative;
+  }
+
+  .struct-item.lifo-item { border-color: var(--lifo-color); color: var(--lifo-color); background: rgba(167,139,250,0.08); }
+  .struct-item.fifo-item { border-color: var(--fifo-color); color: var(--fifo-color); background: rgba(52,211,153,0.08); }
+  .struct-item.top-item { box-shadow: 0 0 12px rgba(167,139,250,0.3); }
+  .struct-item.front-item { box-shadow: 0 0 12px rgba(52,211,153,0.3); }
+
+  .pointer-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--muted);
+    text-align: center;
+    margin-top: 4px;
+    letter-spacing: 0.05em;
+  }
+
+  .action-log {
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--muted);
+    min-height: 40px;
+    line-height: 1.5;
+  }
+
+  .action-log .highlight { color: var(--text); }
+  .action-log .op-push { color: var(--lifo-color); }
+  .action-log .op-push.fifo { color: var(--fifo-color); }
+  .action-log .op-pop { color: var(--goal-color); }
+
+  /* Step table */
+  .table-panel { padding: 0; }
+
+  .step-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.78rem;
+  }
+
+  .step-table th {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+  }
+
+  .step-table td {
+    padding: 7px 12px;
+    border-bottom: 1px solid rgba(42,45,53,0.5);
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--muted);
+    vertical-align: top;
+  }
+
+  .step-table tr.current-row td { background: rgba(245,158,11,0.05); color: var(--text); }
+  .step-table tr.current-row.bfs-row td { background: rgba(56,189,248,0.05); }
+  .step-table tr.past-row td { color: #3a3d47; }
+
+  .node-pill {
+    display: inline-block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 3px;
+    margin: 1px;
+  }
+
+  .pill-frontier { background: rgba(167,139,250,0.15); color: var(--lifo-color); border: 1px solid rgba(167,139,250,0.3); }
+  .pill-frontier.fifo { background: rgba(52,211,153,0.15); color: var(--fifo-color); border: 1px solid rgba(52,211,153,0.3); }
+  .pill-expanded { background: rgba(107,114,128,0.15); color: var(--muted); border: 1px solid rgba(107,114,128,0.3); }
+  .pill-goal { background: rgba(248,113,113,0.15); color: var(--goal-color); border: 1px solid rgba(248,113,113,0.3); }
+
+  .verdict-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    font-size: 0.83rem;
+    line-height: 1.7;
+    color: #c4c7d0;
+  }
+
+  .verdict-box h3 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.8rem;
+    letter-spacing: 0.08em;
+    color: var(--text);
+    margin-bottom: 10px;
+  }
+
+  .verdict-row {
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+    margin-bottom: 6px;
+  }
+
+  .verdict-key {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .check { color: #34d399; margin-right: 4px; }
+  .cross { color: #f87171; margin-right: 4px; }
+
+  .empty-frontier { color: var(--muted); font-style: italic; font-size: 0.75rem; }
+</style>
+</head>
+<body>
+
+<h1>LIFO vs FIFO — DFS & BFS</h1>
+<p class="subtitle">Why the data structure defines the search strategy</p>
+
+<div class="explanation-box">
+  <strong>The core insight:</strong> The only difference between DFS and BFS is which node gets popped from the frontier next.
+  A <span class="tag-lifo">LIFO stack</span> always pops the <em>most recently added</em> node → you go deep first → that <em>is</em> DFS.
+  A <span class="tag-fifo">FIFO queue</span> always pops the <em>oldest</em> node → you exhaust each level before going deeper → that <em>is</em> BFS.
+  You cannot separate the strategy from the structure — they are the same thing.
+</div>
+
+<div class="controls">
+  <button class="mode-btn active-dfs" id="btn-dfs" onclick="setMode('dfs')">DFS — LIFO STACK</button>
+  <button class="mode-btn" id="btn-bfs" onclick="setMode('bfs')">BFS — FIFO QUEUE</button>
+  <div class="step-controls">
+    <button class="step-btn" id="btn-prev" onclick="prevStep()">← PREV</button>
+    <span class="step-counter" id="step-counter">0 / 0</span>
+    <button class="step-btn" id="btn-next" onclick="nextStep()">NEXT →</button>
+    <button class="step-btn" onclick="resetSteps()">RESET</button>
+  </div>
+</div>
+
+<div class="main-grid">
+  <!-- Tree -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="dot" id="tree-dot" style="background:var(--dfs-color)"></span>
+      <span id="tree-title">DFS — LIFO STACK TRAVERSAL</span>
+    </div>
+    <div class="tree-panel">
+      <svg class="tree" width="300" height="280" viewBox="0 0 300 280">
+        <!-- Edges -->
+        <line id="e-AB" class="tree-edge" x1="150" y1="30" x2="90" y2="100"/>
+        <line id="e-AC" class="tree-edge" x1="150" y1="30" x2="210" y2="100"/>
+        <line id="e-BD" class="tree-edge" x1="90" y1="100" x2="50" y2="180"/>
+        <line id="e-BE" class="tree-edge" x1="90" y1="100" x2="110" y2="180"/>
+        <line id="e-CF" class="tree-edge" x1="210" y1="100" x2="190" y2="180"/>
+        <line id="e-CG" class="tree-edge" x1="210" y1="100" x2="250" y2="180"/>
+        <line id="e-EH" class="tree-edge" x1="110" y1="180" x2="90" y2="255"/>
+        <line id="e-FI" class="tree-edge" x1="190" y1="180" x2="200" y2="255"/>
+
+        <!-- Nodes -->
+        <g id="node-A" style="cursor:default">
+          <circle class="node-circle" id="c-A" cx="150" cy="30" r="20"/>
+          <text class="node-label" id="l-A" x="150" y="30">A</text>
+        </g>
+        <g id="node-B">
+          <circle class="node-circle" id="c-B" cx="90" cy="100" r="20"/>
+          <text class="node-label" id="l-B" x="90" y="100">B</text>
+        </g>
+        <g id="node-C">
+          <circle class="node-circle" id="c-C" cx="210" cy="100" r="20"/>
+          <text class="node-label" id="l-C" x="210" y="100">C</text>
+        </g>
+        <g id="node-D">
+          <circle class="node-circle" id="c-D" cx="50" cy="180" r="20"/>
+          <text class="node-label" id="l-D" x="50" y="180">D</text>
+        </g>
+        <g id="node-E">
+          <circle class="node-circle" id="c-E" cx="110" cy="180" r="20"/>
+          <text class="node-label" id="l-E" x="110" y="180">E</text>
+        </g>
+        <g id="node-F">
+          <circle class="node-circle" id="c-F" cx="190" cy="180" r="20"/>
+          <text class="node-label" id="l-F" x="190" y="180">F</text>
+        </g>
+        <g id="node-G">
+          <circle class="node-circle" id="c-G" cx="250" cy="180" r="20"/>
+          <text class="node-label" id="l-G" x="250" y="180">G</text>
+        </g>
+        <g id="node-H">
+          <circle class="node-circle" id="c-H" cx="90" cy="255" r="20"/>
+          <text class="node-label" id="l-H" x="90" y="255">H</text>
+        </g>
+        <g id="node-I">
+          <circle class="node-circle" id="c-I" cx="200" cy="255" r="20"/>
+          <text class="node-label" id="l-I" x="200" y="255">I</text>
+        </g>
+      </svg>
+    </div>
+  </div>
+
+  <!-- Stack/Queue visualization -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="dot" id="struct-dot" style="background:var(--lifo-color)"></span>
+      <span id="struct-title">FRONTIER: LIFO STACK</span>
+    </div>
+    <div class="queue-panel">
+      <div class="struct-label" id="struct-direction">← POP (top) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PUSH (top) →</div>
+      <div class="struct-container" id="struct-display">
+        <span class="empty-frontier">empty — click NEXT to begin</span>
+      </div>
+      <div class="pointer-label" id="pointer-label"></div>
+    </div>
+    <div class="action-log" id="action-log">
+      Waiting to start...
+    </div>
+  </div>
+</div>
+
+<!-- Step table -->
+<div class="panel" style="margin-bottom: 20px;">
+  <div class="panel-header">
+    <span class="dot" style="background:var(--muted)"></span>
+    STEP-BY-STEP LOG
+  </div>
+  <div class="table-panel">
+    <table class="step-table">
+      <thead>
+        <tr>
+          <th>STEP</th>
+          <th>NODE EXPANDED</th>
+          <th>NODES ADDED</th>
+          <th>FRONTIER STATE</th>
+        </tr>
+      </thead>
+      <tbody id="step-tbody">
+        <tr><td colspan="4" style="text-align:center; color:var(--muted); padding:16px; font-family:'IBM Plex Mono',monospace; font-size:0.78rem;">Press NEXT to begin</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Verdict -->
+<div class="verdict-box">
+  <h3>WHY YOU CAN'T SWAP THEM</h3>
+  <div class="verdict-row">
+    <span class="verdict-key tag-dfs">DFS + LIFO</span>
+    <span><span class="check">✓</span> Always goes deepest first. The stack keeps the deepest unexplored path on top.</span>
+  </div>
+  <div class="verdict-row">
+    <span class="verdict-key tag-bfs">BFS + FIFO</span>
+    <span><span class="check">✓</span> Always exhausts current depth before going deeper. The queue preserves level order.</span>
+  </div>
+  <div class="verdict-row">
+    <span class="verdict-key" style="color:#6b7280">DFS + FIFO</span>
+    <span><span class="cross">✗</span> A FIFO frontier forces level-by-level exploration — you get BFS behavior, not DFS.</span>
+  </div>
+  <div class="verdict-row">
+    <span class="verdict-key" style="color:#6b7280">BFS + LIFO</span>
+    <span><span class="cross">✗</span> A LIFO frontier always dives deep — you get DFS behavior, not BFS.</span>
+  </div>
+  <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); color: var(--muted); font-size: 0.8rem;">
+    <strong style="color:var(--text)">Bottom line:</strong> The data structure <em>is</em> the strategy. Swapping one changes the other automatically.
+  </div>
+</div>
+
+<script>
+const modes = {
+  dfs: {
+    color: 'var(--dfs-color)',
+    structColor: 'var(--lifo-color)',
+    structLabel: 'FRONTIER: LIFO STACK',
+    treeTitle: 'DFS — LIFO STACK TRAVERSAL',
+    direction: '← POP (top)                    PUSH (top) →',
+    pointerLabel: 'TOP OF STACK (popped first)',
+    steps: [
+      {
+        expand: 'A', added: ['B','C'],
+        frontier: ['C','B'],  // top first
+        log: '<span class="op-push">PUSH</span> B, C → C lands on top (added last alphabetically)',
+        note: 'C is on top because it was pushed last'
+      },
+      {
+        expand: 'C', added: ['F','G'],
+        frontier: ['G','F','B'],
+        log: '<span class="op-pop">POP</span> C (top) → <span class="op-push">PUSH</span> F, G → G on top. Going deep into C\'s subtree.',
+        note: 'G on top — DFS dives right into C branch'
+      },
+      {
+        expand: 'G', added: [],
+        frontier: ['F','B'],
+        log: '<span class="op-pop">POP</span> G (top) → no children. Backtrack.',
+        note: 'Dead end — stack unwinds to F'
+      },
+      {
+        expand: 'F', added: ['I'],
+        frontier: ['I','B'],
+        log: '<span class="op-pop">POP</span> F (top) → <span class="op-push">PUSH</span> I',
+        note: 'I is now on top'
+      },
+      {
+        expand: 'I', added: [],
+        frontier: [],
+        log: '<span class="op-pop">POP</span> I → <span style="color:var(--goal-color)">GOAL FOUND!</span> Path: A→C→F→I',
+        note: 'GOAL',
+        goal: true
+      }
+    ]
+  },
+  bfs: {
+    color: 'var(--bfs-color)',
+    structColor: 'var(--fifo-color)',
+    structLabel: 'FRONTIER: FIFO QUEUE',
+    treeTitle: 'BFS — FIFO QUEUE TRAVERSAL',
+    direction: '← DEQUEUE (front)              ENQUEUE (back) →',
+    pointerLabel: 'FRONT OF QUEUE (dequeued first)',
+    steps: [
+      {
+        expand: 'A', added: ['B','C'],
+        frontier: ['B','C'],  // front first
+        log: '<span class="op-push fifo">ENQUEUE</span> B, C → B at front (added first)',
+        note: 'B is at front — BFS processes level 1 first'
+      },
+      {
+        expand: 'B', added: ['D','E'],
+        frontier: ['C','D','E'],
+        log: '<span class="op-pop">DEQUEUE</span> B (front) → <span class="op-push fifo">ENQUEUE</span> D, E to back. Still finishing level 1.',
+        note: 'C still at front — must finish depth 1 before going deeper'
+      },
+      {
+        expand: 'C', added: ['F','G'],
+        frontier: ['D','E','F','G'],
+        log: '<span class="op-pop">DEQUEUE</span> C (front) → <span class="op-push fifo">ENQUEUE</span> F, G to back. Level 1 done.',
+        note: 'All depth-1 nodes exhausted. Now depth 2.'
+      },
+      {
+        expand: 'D', added: [],
+        frontier: ['E','F','G'],
+        log: '<span class="op-pop">DEQUEUE</span> D → no children.',
+        note: 'Working through depth-2 nodes in order'
+      },
+      {
+        expand: 'E', added: ['H'],
+        frontier: ['F','G','H'],
+        log: '<span class="op-pop">DEQUEUE</span> E → <span class="op-push fifo">ENQUEUE</span> H to back.',
+        note: 'H goes to back — depth 3 nodes queue up behind depth 2'
+      },
+      {
+        expand: 'F', added: ['I'],
+        frontier: ['G','H','I'],
+        log: '<span class="op-pop">DEQUEUE</span> F → <span class="op-push fifo">ENQUEUE</span> I to back.',
+        note: 'I queued at back — still finishing depth 2'
+      },
+      {
+        expand: 'G', added: [],
+        frontier: ['H','I'],
+        log: '<span class="op-pop">DEQUEUE</span> G → no children. Depth 2 exhausted.',
+        note: 'All depth-2 nodes done. Now depth 3.'
+      },
+      {
+        expand: 'H', added: [],
+        frontier: ['I'],
+        log: '<span class="op-pop">DEQUEUE</span> H → no children.',
+        note: 'H processed before I — FIFO preserves order'
+      },
+      {
+        expand: 'I', added: [],
+        frontier: [],
+        log: '<span class="op-pop">DEQUEUE</span> I → <span style="color:var(--goal-color)">GOAL FOUND!</span> Path: A→C→F→I',
+        note: 'GOAL — BFS guarantees shortest path',
+        goal: true
+      }
+    ]
+  }
+};
+
+let currentMode = 'dfs';
+let currentStep = -1;
+let completedSteps = [];
+
+function setMode(mode) {
+  currentMode = mode;
+  resetSteps();
+  document.getElementById('btn-dfs').className = 'mode-btn' + (mode === 'dfs' ? ' active-dfs' : '');
+  document.getElementById('btn-bfs').className = 'mode-btn' + (mode === 'bfs' ? ' active-bfs' : '');
+  const m = modes[mode];
+  document.getElementById('tree-dot').style.background = m.color;
+  document.getElementById('tree-title').textContent = m.treeTitle;
+  document.getElementById('struct-dot').style.background = m.structColor;
+  document.getElementById('struct-title').textContent = m.structLabel;
+  document.getElementById('struct-direction').textContent = m.direction;
+  document.getElementById('pointer-label').textContent = '';
+}
+
+function resetNodeVisuals() {
+  const nodes = ['A','B','C','D','E','F','G','H','I'];
+  nodes.forEach(n => {
+    document.getElementById('c-'+n).className.baseVal = 'node-circle';
+    document.getElementById('l-'+n).className.baseVal = 'node-label';
+  });
+}
+
+function resetSteps() {
+  currentStep = -1;
+  completedSteps = [];
+  resetNodeVisuals();
+  const container = document.getElementById('struct-display');
+  container.innerHTML = '<span class="empty-frontier">empty — click NEXT to begin</span>';
+  document.getElementById('action-log').innerHTML = 'Waiting to start...';
+  document.getElementById('pointer-label').textContent = '';
+  renderTable();
+  updateButtons();
+}
+
+function nextStep() {
+  const steps = modes[currentMode].steps;
+  if (currentStep < steps.length - 1) {
+    currentStep++;
+    const step = steps[currentStep];
+    completedSteps.push(step);
+    applyStep(step, currentStep);
+    updateButtons();
+  }
+}
+
+function prevStep() {
+  if (currentStep >= 0) {
+    currentStep--;
+    completedSteps = completedSteps.slice(0, currentStep + 1);
+    replayAll();
+    updateButtons();
+  }
+}
+
+function replayAll() {
+  // Reset visuals
+  resetNodeVisuals();
+  document.getElementById('action-log').innerHTML = currentStep < 0 ? 'Waiting to start...' : '';
+  document.getElementById('struct-display').innerHTML = currentStep < 0 ? '<span class="empty-frontier">empty — click NEXT to begin</span>' : '';
+
+  const steps = modes[currentMode].steps;
+  let expandedNodes = [];
+  for (let i = 0; i <= currentStep; i++) {
+    const step = steps[i];
+    const isCurrent = i === currentStep;
+    // Mark expanded
+    expandedNodes.push(step.expand);
+    // Apply node states
+    expandedNodes.slice(0,-1).forEach(n => {
+      document.getElementById('c-'+n).className.baseVal = 'node-circle expanded';
+      document.getElementById('l-'+n).className.baseVal = 'node-label expanded-label';
+    });
+    if (step.goal) {
+      document.getElementById('c-'+step.expand).className.baseVal = 'node-circle goal-found';
+      document.getElementById('l-'+step.expand).className.baseVal = 'node-label goal-label';
+    } else {
+      const modeClass = currentMode === 'bfs' ? ' bfs-mode' : '';
+      document.getElementById('c-'+step.expand).className.baseVal = 'node-circle current';
+      document.getElementById('l-'+step.expand).className.baseVal = 'node-label current-label' + modeClass;
+    }
+    if (isCurrent) {
+      renderStruct(step.frontier);
+      document.getElementById('action-log').innerHTML = step.log;
+      document.getElementById('pointer-label').textContent = step.frontier.length > 0 ? modes[currentMode].pointerLabel : '';
+    }
+  }
+  // Mark frontier nodes
+  if (currentStep >= 0) {
+    const step = steps[currentStep];
+    step.frontier.forEach(n => {
+      const el = document.getElementById('c-'+n);
+      if (!el.className.baseVal.includes('expanded') && !el.className.baseVal.includes('current') && !el.className.baseVal.includes('goal')) {
+        const modeClass = currentMode === 'bfs' ? ' fifo-mode' : '';
+        el.className.baseVal = 'node-circle frontier' + modeClass;
+      }
+    });
+  }
+  renderTable();
+}
+
+function applyStep(step, idx, silent) {
+  const isBfs = currentMode === 'bfs';
+  const modeClass = isBfs ? ' bfs-mode' : '';
+  const fifoClass = isBfs ? ' fifo-mode' : '';
+
+  // Clear previous current
+  const nodes = ['A','B','C','D','E','F','G','H','I'];
+  nodes.forEach(n => {
+    const c = document.getElementById('c-'+n);
+    if (c.className.baseVal.includes('current') || c.className.baseVal.includes('frontier')) {
+      c.className.baseVal = 'node-circle';
+      document.getElementById('l-'+n).className.baseVal = 'node-label';
+    }
+  });
+
+  // Mark all previously expanded as expanded
+  const steps = modes[currentMode].steps;
+  for (let i = 0; i < idx; i++) {
+    const s = steps[i];
+    if (!s.goal) {
+      document.getElementById('c-'+s.expand).className.baseVal = 'node-circle expanded';
+      document.getElementById('l-'+s.expand).className.baseVal = 'node-label expanded-label';
+    }
+  }
+
+  // Mark current
+  if (step.goal) {
+    document.getElementById('c-'+step.expand).className.baseVal = 'node-circle goal-found';
+    document.getElementById('l-'+step.expand).className.baseVal = 'node-label goal-label';
+  } else {
+    document.getElementById('c-'+step.expand).className.baseVal = 'node-circle current';
+    document.getElementById('l-'+step.expand).className.baseVal = 'node-label current-label' + modeClass;
+  }
+
+  // Mark frontier
+  step.frontier.forEach(n => {
+    const el = document.getElementById('c-'+n);
+    if (!el.className.baseVal.includes('expanded') && !el.className.baseVal.includes('current') && !el.className.baseVal.includes('goal')) {
+      el.className.baseVal = 'node-circle frontier' + fifoClass;
+    }
+  });
+
+  if (!silent) {
+    renderStruct(step.frontier);
+    document.getElementById('action-log').innerHTML = step.log;
+    document.getElementById('pointer-label').textContent = step.frontier.length > 0 ? modes[currentMode].pointerLabel : '';
+    renderTable();
+  }
+}
+
+function renderStruct(frontier) {
+  const container = document.getElementById('struct-display');
+  const isBfs = currentMode === 'bfs';
+  if (frontier.length === 0) {
+    container.innerHTML = '<span class="empty-frontier">frontier is empty</span>';
+    return;
+  }
+  container.innerHTML = '';
+  frontier.forEach((node, i) => {
+    const div = document.createElement('div');
+    div.style.textAlign = 'center';
+    const item = document.createElement('span');
+    item.className = 'struct-item ' + (isBfs ? 'fifo-item' : 'lifo-item');
+    if (i === 0) item.className += isBfs ? ' front-item' : ' top-item';
+    item.textContent = node;
+    div.appendChild(item);
+    if (i === 0) {
+      const lbl = document.createElement('div');
+      lbl.className = 'pointer-label';
+      lbl.textContent = isBfs ? '← FRONT' : '← TOP';
+      div.appendChild(lbl);
+    }
+    container.appendChild(div);
+  });
+}
+
+function renderTable() {
+  const tbody = document.getElementById('step-tbody');
+  const steps = modes[currentMode].steps;
+  const isBfs = currentMode === 'bfs';
+  const pillClass = isBfs ? 'pill-frontier fifo' : 'pill-frontier';
+
+  if (currentStep < 0) {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:16px; font-family:\'IBM Plex Mono\',monospace; font-size:0.78rem;">Press NEXT to begin</td></tr>';
+    return;
+  }
+
+  let html = '';
+  for (let i = 0; i <= currentStep; i++) {
+    const s = steps[i];
+    const isCurrent = i === currentStep;
+    const rowClass = isCurrent ? (isBfs ? 'current-row bfs-row' : 'current-row') : 'past-row';
+    const addedHtml = s.added.length > 0
+      ? s.added.map(n => `<span class="node-pill ${isCurrent ? pillClass : 'pill-expanded'}">${n}</span>`).join('')
+      : '<span style="color:var(--muted);font-size:0.72rem">—</span>';
+    const frontierHtml = s.frontier.length > 0
+      ? s.frontier.map((n,idx) => `<span class="node-pill ${isCurrent && idx===0 ? (s.goal?'pill-goal':pillClass) : (isCurrent?pillClass:'pill-expanded')}">${n}</span>`).join('')
+      : (s.goal ? '' : '<span style="color:var(--muted);font-size:0.72rem">empty</span>');
+    const expandedPill = s.goal
+      ? `<span class="node-pill pill-goal">${s.expand}</span>`
+      : `<span class="node-pill ${isCurrent ? (isBfs?'pill-frontier fifo':'pill-frontier') : 'pill-expanded'}">${s.expand}</span>`;
+
+    html += `<tr class="${rowClass}">
+      <td>${i+1}</td>
+      <td>${expandedPill}</td>
+      <td>${addedHtml}</td>
+      <td>${frontierHtml}${s.goal ? ' <span class="node-pill pill-goal">★ GOAL</span>' : ''}</td>
+    </tr>`;
+  }
+  tbody.innerHTML = html;
+  document.getElementById('step-counter').textContent = `${currentStep+1} / ${steps.length}`;
+}
+
+function updateButtons() {
+  const steps = modes[currentMode].steps;
+  document.getElementById('btn-prev').disabled = currentStep < 0;
+  document.getElementById('btn-next').disabled = currentStep >= steps.length - 1;
+  document.getElementById('step-counter').textContent = currentStep < 0 ? `0 / ${steps.length}` : `${currentStep+1} / ${steps.length}`;
+}
+
+// init
+updateButtons();
+document.getElementById('step-counter').textContent = `0 / ${modes[currentMode].steps.length}`;
+</script>
+</body>
+</html>
