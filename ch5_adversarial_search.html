@@ -1,0 +1,1284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ch. 5 — Adversarial Search & Games</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500&display=swap');
+
+:root {
+  --bg: #0a0c10;
+  --surface: #111318;
+  --surface2: #181c24;
+  --border: #252830;
+  --text: #e2e4ea;
+  --muted: #5a6070;
+  --max-col: #60a5fa;
+  --min-col: #f87171;
+  --alpha-col: #34d399;
+  --beta-col: #fbbf24;
+  --pruned-col: #4b5260;
+  --mcts-col: #a78bfa;
+  --chance-col: #fb923c;
+  --goal-col: #4ade80;
+  --mono: 'DM Mono', monospace;
+  --sans: 'DM Sans', sans-serif;
+  --display: 'Playfair Display', serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  padding: 32px 24px;
+  max-width: 1300px;
+  margin: 0 auto;
+}
+
+.masthead {
+  display: flex;
+  align-items: baseline;
+  gap: 20px;
+  margin-bottom: 8px;
+}
+
+h1 {
+  font-family: var(--display);
+  font-size: 2.6rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, #e2e4ea 0%, #60a5fa 60%, #a78bfa 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1.1;
+}
+
+.chapter-tag {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--muted);
+  letter-spacing: 0.12em;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+.subtitle {
+  font-size: 0.88rem;
+  color: var(--muted);
+  margin-bottom: 32px;
+  font-weight: 300;
+}
+
+/* NAV */
+.nav {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0;
+  margin-bottom: 32px;
+}
+
+.nav-btn {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  padding: 9px 16px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: -1px;
+}
+
+.nav-btn:hover { color: var(--text); }
+.nav-btn.active { color: var(--text); border-bottom-color: var(--max-col); }
+
+/* SECTIONS */
+.section { display: none; }
+.section.active { display: block; }
+
+/* PANELS */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 24px;
+  margin-bottom: 20px;
+}
+
+.card-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+@media(max-width:780px) { .card-row { grid-template-columns: 1fr; } }
+
+.card h3 {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  margin-bottom: 14px;
+  text-transform: uppercase;
+}
+
+/* CALLOUT */
+.callout {
+  border-left: 3px solid var(--max-col);
+  background: rgba(96,165,250,0.05);
+  padding: 14px 18px;
+  border-radius: 0 6px 6px 0;
+  font-size: 0.85rem;
+  line-height: 1.7;
+  color: #c4c8d4;
+  margin: 14px 0;
+}
+
+.callout.green { border-color: var(--alpha-col); background: rgba(52,211,153,0.05); }
+.callout.amber { border-color: var(--beta-col); background: rgba(251,191,36,0.05); }
+.callout.purple { border-color: var(--mcts-col); background: rgba(167,139,250,0.05); }
+.callout.red { border-color: var(--min-col); background: rgba(248,113,113,0.05); }
+.callout.orange { border-color: var(--chance-col); background: rgba(251,146,60,0.05); }
+
+.callout strong { color: var(--text); }
+
+/* FORMULA BOX */
+.formula {
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  padding: 14px 18px;
+  border-radius: 6px;
+  margin: 12px 0;
+  color: #c4c8d4;
+  line-height: 2;
+  overflow-x: auto;
+}
+
+.formula .max { color: var(--max-col); font-weight: 500; }
+.formula .min { color: var(--min-col); font-weight: 500; }
+.formula .alpha { color: var(--alpha-col); font-weight: 500; }
+.formula .beta { color: var(--beta-col); font-weight: 500; }
+.formula .mcts { color: var(--mcts-col); font-weight: 500; }
+.formula .chance { color: var(--chance-col); font-weight: 500; }
+
+/* GAME DEF TABLE */
+.game-table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
+.game-table th {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+.game-table td {
+  padding: 9px 12px;
+  border-bottom: 1px solid rgba(37,40,48,0.6);
+  line-height: 1.5;
+}
+.game-table td:first-child {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  color: var(--max-col);
+  white-space: nowrap;
+  font-weight: 500;
+}
+.game-table td:nth-child(2) { color: var(--muted); font-size: 0.78rem; }
+.game-table td:nth-child(3) { color: #c4c8d4; font-size: 0.82rem; }
+
+/* ==============================
+   MINIMAX TREE SVG
+   ============================== */
+#minimax-svg { width: 100%; height: auto; overflow: visible; }
+
+.tree-node circle {
+  fill: var(--surface2);
+  stroke: var(--border);
+  stroke-width: 1.5;
+  transition: all 0.4s;
+}
+.tree-node.max-node circle { stroke: var(--max-col); }
+.tree-node.min-node circle { stroke: var(--min-col); }
+.tree-node.highlighted circle { fill: rgba(96,165,250,0.2); stroke: var(--max-col); stroke-width: 2.5; }
+.tree-node.pruned circle { stroke: var(--pruned-col); fill: rgba(30,32,40,0.5); }
+.tree-node.pruned text { fill: var(--pruned-col) !important; }
+
+.tree-node text {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 500;
+  fill: var(--text);
+  text-anchor: middle;
+  dominant-baseline: central;
+  pointer-events: none;
+}
+
+.tree-node .value-label {
+  font-size: 11px;
+  fill: var(--muted);
+  dominant-baseline: auto;
+}
+
+.tree-edge {
+  stroke: var(--border);
+  stroke-width: 1.5;
+  fill: none;
+}
+.tree-edge.active { stroke: var(--alpha-col); stroke-width: 2; }
+.tree-edge.pruned { stroke: var(--pruned-col); stroke-dasharray: 4,3; stroke-width: 1; }
+
+.player-badge {
+  font-family: var(--mono);
+  font-size: 9px;
+  fill: var(--muted);
+  letter-spacing: 0.08em;
+}
+
+/* CONTROLS */
+.controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 20px; }
+.ctrl-btn {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  padding: 8px 16px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.ctrl-btn:hover:not(:disabled) { border-color: var(--text); }
+.ctrl-btn:disabled { opacity: 0.3; cursor: default; }
+.ctrl-btn.primary { border-color: var(--max-col); color: var(--max-col); background: rgba(96,165,250,0.07); }
+.ctrl-btn.primary:hover { background: rgba(96,165,250,0.15); }
+
+.step-counter {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--muted);
+  min-width: 55px;
+  text-align: center;
+}
+
+.status-log {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--muted);
+  padding: 12px 16px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  min-height: 44px;
+  line-height: 1.6;
+  margin-top: 14px;
+}
+
+/* ALPHA BETA TRACKER */
+.ab-tracker {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.ab-track-box {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px 16px;
+  text-align: center;
+}
+.ab-track-box .ab-label {
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.ab-track-box .ab-val {
+  font-family: var(--mono);
+  font-size: 1.6rem;
+  font-weight: 500;
+  line-height: 1;
+}
+.ab-alpha .ab-val { color: var(--alpha-col); }
+.ab-beta .ab-val { color: var(--beta-col); }
+
+/* MCTS PHASES */
+.mcts-phases {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin: 16px 0;
+}
+@media(max-width:700px) { .mcts-phases { grid-template-columns: 1fr 1fr; } }
+
+.mcts-phase {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px 14px;
+  text-align: center;
+  transition: all 0.3s;
+  cursor: pointer;
+}
+
+.mcts-phase.active-phase {
+  border-color: var(--mcts-col);
+  background: rgba(167,139,250,0.08);
+}
+
+.phase-num {
+  font-family: var(--mono);
+  font-size: 1.4rem;
+  font-weight: 500;
+  color: var(--mcts-col);
+  margin-bottom: 6px;
+  opacity: 0.5;
+  transition: opacity 0.3s;
+}
+
+.mcts-phase.active-phase .phase-num { opacity: 1; }
+
+.phase-name {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+.mcts-phase.active-phase .phase-name { color: var(--text); }
+
+.phase-desc {
+  font-size: 0.78rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.mcts-phase.active-phase .phase-desc { color: #c4c8d4; }
+
+/* COMPLEXITY TABLE */
+.algo-compare { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+.algo-compare th {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  padding: 8px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface2);
+}
+.algo-compare td {
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(37,40,48,0.5);
+  line-height: 1.5;
+}
+.algo-compare td:first-child { font-family: var(--mono); font-size: 0.8rem; color: var(--text); font-weight: 500; }
+.algo-compare tr:hover td { background: rgba(255,255,255,0.02); }
+
+.tag {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  padding: 2px 7px;
+  border-radius: 3px;
+  font-weight: 500;
+}
+.tag-max { background: rgba(96,165,250,0.15); color: var(--max-col); border: 1px solid rgba(96,165,250,0.3); }
+.tag-min { background: rgba(248,113,113,0.15); color: var(--min-col); border: 1px solid rgba(248,113,113,0.3); }
+.tag-green { background: rgba(52,211,153,0.15); color: var(--alpha-col); border: 1px solid rgba(52,211,153,0.3); }
+.tag-amber { background: rgba(251,191,36,0.15); color: var(--beta-col); border: 1px solid rgba(251,191,36,0.3); }
+.tag-purple { background: rgba(167,139,250,0.15); color: var(--mcts-col); border: 1px solid rgba(167,139,250,0.3); }
+.tag-orange { background: rgba(251,146,60,0.15); color: var(--chance-col); border: 1px solid rgba(251,146,60,0.3); }
+
+/* PROGRESS BAR */
+.eval-bar-wrap { margin: 8px 0; }
+.eval-label { font-family: var(--mono); font-size: 0.72rem; color: var(--muted); margin-bottom: 4px; display: flex; justify-content: space-between; }
+.eval-bar { height: 8px; background: var(--surface2); border-radius: 4px; overflow: hidden; border: 1px solid var(--border); }
+.eval-bar-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
+
+/* UCT formula interactive */
+.uct-term {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  border-bottom: 1px dashed;
+  transition: all 0.2s;
+}
+.uct-exploit { border-color: var(--alpha-col); color: var(--alpha-col); }
+.uct-exploit:hover { background: rgba(52,211,153,0.1); }
+.uct-explore { border-color: var(--beta-col); color: var(--beta-col); }
+.uct-explore:hover { background: rgba(251,191,36,0.1); }
+.uct-balance { border-color: var(--mcts-col); color: var(--mcts-col); }
+.uct-balance:hover { background: rgba(167,139,250,0.1); }
+
+.uct-tooltip {
+  font-size: 0.8rem;
+  color: #c4c8d4;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin-top: 10px;
+  min-height: 42px;
+  line-height: 1.6;
+  transition: all 0.3s;
+}
+
+/* GAME TYPE GRID */
+.game-types { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+@media(max-width:700px) { .game-types { grid-template-columns: 1fr; } }
+
+.game-type-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+}
+.game-type-card h4 {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.game-type-card .game-examples {
+  font-size: 0.8rem;
+  color: var(--text);
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+.game-type-card .game-note {
+  font-size: 0.75rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+/* Horizon / singular extension */
+.effect-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media(max-width:700px) { .effect-grid { grid-template-columns: 1fr; } }
+
+.effect-card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  background: var(--surface2);
+}
+.effect-card h4 { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 10px; }
+.effect-card h4.amber { color: var(--beta-col); }
+.effect-card h4.green { color: var(--alpha-col); }
+.effect-card h4.purple { color: var(--mcts-col); }
+.effect-card h4.blue { color: var(--max-col); }
+.effect-card p { font-size: 0.8rem; color: var(--muted); line-height: 1.6; }
+
+/* ---- MINIMAX TREE DATA ---- */
+</style>
+</head>
+<body>
+
+<div class="masthead">
+  <h1>Adversarial Search &amp; Games</h1>
+  <span class="chapter-tag">CHAPTER 5</span>
+</div>
+<p class="subtitle">Russell &amp; Norvig — AI: A Modern Approach (4th ed.) · Interactive Study Guide</p>
+
+<nav class="nav">
+  <button class="nav-btn active" onclick="showSection('overview')">Overview</button>
+  <button class="nav-btn" onclick="showSection('minimax')">Minimax</button>
+  <button class="nav-btn" onclick="showSection('alphabeta')">Alpha–Beta</button>
+  <button class="nav-btn" onclick="showSection('heuristic')">Heuristic Eval</button>
+  <button class="nav-btn" onclick="showSection('mcts')">MCTS</button>
+  <button class="nav-btn" onclick="showSection('stochastic')">Stochastic &amp; Partial</button>
+  <button class="nav-btn" onclick="showSection('compare')">Algorithm Comparison</button>
+</nav>
+
+<!-- ======================== OVERVIEW ======================== -->
+<div id="overview" class="section active">
+
+  <div class="card-row">
+    <div class="card">
+      <h3>Chapter Core Idea</h3>
+      <p style="font-size:0.85rem;color:#c4c8d4;line-height:1.7;margin-bottom:12px;">
+        In <strong>competitive multi-agent environments</strong>, agents have conflicting goals. Instead of a fixed environment, you now face an active opponent. The key shift: your solution can't be a fixed action sequence — it must be a <em>conditional strategy</em> accounting for every possible opponent response.
+      </p>
+      <div class="callout">
+        <strong>Three stances toward adversarial agents:</strong> treat as an aggregate economy · treat as a nondeterministic environment · model explicitly with game-tree search ← <em>this chapter</em>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Formal Game Definition</h3>
+      <table class="game-table">
+        <thead><tr><th>Component</th><th>Notation</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td>S₀</td><td>Initial state</td><td>Board setup at start</td></tr>
+          <tr><td>TO-MOVE(s)</td><td>Player to move</td><td>Whose turn it is</td></tr>
+          <tr><td>ACTIONS(s)</td><td>Legal moves</td><td>Set of valid moves in s</td></tr>
+          <tr><td>RESULT(s,a)</td><td>Transition</td><td>State after action a in s</td></tr>
+          <tr><td>IS-TERMINAL(s)</td><td>Terminal test</td><td>True when game is over</td></tr>
+          <tr><td>UTILITY(s,p)</td><td>Payoff function</td><td>Final numeric value to player p</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Types of Games Covered</h3>
+    <div class="game-types">
+      <div class="game-type-card">
+        <h4><span class="tag tag-max">MAX</span>&nbsp; Deterministic Perfect-Info</h4>
+        <div class="game-examples">Chess, Go, Checkers, Tic-Tac-Toe</div>
+        <div class="game-note">Two-player, turn-taking, zero-sum. Most thoroughly studied class. Minimax and Alpha-Beta apply directly.</div>
+      </div>
+      <div class="game-type-card">
+        <h4><span class="tag tag-orange">CHANCE</span>&nbsp; Stochastic Games</h4>
+        <div class="game-examples">Backgammon, Monopoly</div>
+        <div class="game-note">Dice or other random elements added. Requires expectiminimax — takes weighted average over chance outcomes.</div>
+      </div>
+      <div class="game-type-card">
+        <h4><span class="tag tag-purple">PARTIAL</span>&nbsp; Imperfect Information</h4>
+        <div class="game-examples">Poker, Bridge, Kriegspiel</div>
+        <div class="game-note">Players can't see the full state. Requires belief states and can call for randomized strategies (equilibria).</div>
+      </div>
+    </div>
+    <div class="callout amber" style="margin-top:14px;">
+      <strong>Zero-sum clarification:</strong> Chess payoffs sum to +1 per game (win=1, loss=0, draw=0.5 each), not zero — but it's called zero-sum because one player's gain exactly equals the other's loss. The <em>relative</em> payoffs sum to zero.
+    </div>
+  </div>
+
+</div>
+
+<!-- ======================== MINIMAX ======================== -->
+<div id="minimax" class="section">
+  <div class="card">
+    <h3>Minimax Formula</h3>
+    <div class="formula">
+      MINIMAX(s) = <br>
+      &nbsp;&nbsp;<span class="max">UTILITY(s, MAX)</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if IS-TERMINAL(s)<br>
+      &nbsp;&nbsp;<span class="max">max</span><sub>a ∈ ACTIONS(s)</sub> MINIMAX(RESULT(s,a))&nbsp;&nbsp;if TO-MOVE(s) = MAX<br>
+      &nbsp;&nbsp;<span class="min">min</span><sub>a ∈ ACTIONS(s)</sub> MINIMAX(RESULT(s,a))&nbsp;&nbsp;if TO-MOVE(s) = MIN
+    </div>
+    <div class="callout green">
+      <strong>Key properties:</strong> Complete depth-first search · Time: <strong>O(b<sup>m</sup>)</strong> · Space: <strong>O(bm)</strong> or <strong>O(m)</strong> if actions generated one at a time · Not feasible for chess (10<sup>40</sup> nodes) but defines what <em>optimal</em> means.
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Interactive Two-Ply Tree — Step Through Minimax</h3>
+    <div class="controls">
+      <button class="ctrl-btn" id="mm-prev" onclick="mmStep(-1)" disabled>← PREV</button>
+      <span class="step-counter" id="mm-counter">0 / 7</span>
+      <button class="ctrl-btn" id="mm-next" onclick="mmStep(1)">NEXT →</button>
+      <button class="ctrl-btn" onclick="mmReset()">RESET</button>
+      <span style="margin-left:auto;font-family:var(--mono);font-size:0.72rem;color:var(--muted);">
+        <span style="color:var(--max-col)">▲ MAX</span>&nbsp; picks highest &nbsp;|&nbsp;
+        <span style="color:var(--min-col)">▽ MIN</span>&nbsp; picks lowest
+      </span>
+    </div>
+    <svg id="minimax-svg" viewBox="0 0 700 340">
+      <defs>
+        <marker id="arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+          <polygon points="0 0, 8 3, 0 6" fill="#5a6070"/>
+        </marker>
+      </defs>
+
+      <!-- Edges -->
+      <line id="e-ab1" class="tree-edge" x1="350" y1="55" x2="175" y2="155"/>
+      <line id="e-ab2" class="tree-edge" x1="350" y1="55" x2="350" y2="155"/>
+      <line id="e-ab3" class="tree-edge" x1="350" y1="55" x2="525" y2="155"/>
+
+      <line id="e-b1d" class="tree-edge" x1="175" y1="175" x2="90" y2="265"/>
+      <line id="e-b1e" class="tree-edge" x1="175" y1="175" x2="175" y2="265"/>
+      <line id="e-b1f" class="tree-edge" x1="175" y1="175" x2="260" y2="265"/>
+
+      <line id="e-b2g" class="tree-edge" x1="350" y1="175" x2="310" y2="265"/>
+      <line id="e-b2h" class="tree-edge" x1="350" y1="175" x2="390" y2="265"/>
+
+      <line id="e-b3i" class="tree-edge" x1="525" y1="175" x2="465" y2="265"/>
+      <line id="e-b3j" class="tree-edge" x1="525" y1="175" x2="525" y2="265"/>
+      <line id="e-b3k" class="tree-edge" x1="525" y1="175" x2="585" y2="265"/>
+
+      <!-- Player labels -->
+      <text class="player-badge" x="15" y="60">MAX ▲</text>
+      <text class="player-badge" x="15" y="180">MIN ▽</text>
+      <text class="player-badge" x="15" y="280">TERMINAL</text>
+
+      <!-- Depth lines -->
+      <line x1="60" y1="35" x2="700" y2="35" stroke="#252830" stroke-width="1" stroke-dasharray="3,6"/>
+      <line x1="60" y1="155" x2="700" y2="155" stroke="#252830" stroke-width="1" stroke-dasharray="3,6"/>
+      <line x1="60" y1="265" x2="700" y2="265" stroke="#252830" stroke-width="1" stroke-dasharray="3,6"/>
+
+      <!-- MAX root -->
+      <g class="tree-node max-node" id="node-root">
+        <circle cx="350" cy="45" r="22"/>
+        <text x="350" y="45" id="val-root">?</text>
+        <text class="value-label" x="350" y="76">a1</text>
+      </g>
+
+      <!-- MIN nodes -->
+      <g class="tree-node min-node" id="node-b1">
+        <circle cx="175" cy="165" r="22"/>
+        <text x="175" y="165" id="val-b1">?</text>
+        <text class="value-label" x="175" y="196">a1</text>
+      </g>
+      <g class="tree-node min-node" id="node-b2">
+        <circle cx="350" cy="165" r="22"/>
+        <text x="350" y="165" id="val-b2">?</text>
+        <text class="value-label" x="350" y="196">a2</text>
+      </g>
+      <g class="tree-node min-node" id="node-b3">
+        <circle cx="525" cy="165" r="22"/>
+        <text x="525" y="165" id="val-b3">?</text>
+        <text class="value-label" x="525" y="196">a3</text>
+      </g>
+
+      <!-- Terminal nodes -->
+      <g class="tree-node" id="node-d"><circle cx="90" cy="275" r="18"/><text x="90" y="275">3</text></g>
+      <g class="tree-node" id="node-e"><circle cx="175" cy="275" r="18"/><text x="175" y="275">12</text></g>
+      <g class="tree-node" id="node-f"><circle cx="260" cy="275" r="18"/><text x="260" y="275">8</text></g>
+      <g class="tree-node" id="node-g"><circle cx="310" cy="275" r="18"/><text x="310" y="275">2</text></g>
+      <g class="tree-node" id="node-h"><circle cx="390" cy="275" r="18"/><text x="390" y="275">4</text></g>
+      <g class="tree-node" id="node-i"><circle cx="465" cy="275" r="18"/><text x="465" y="275">14</text></g>
+      <g class="tree-node" id="node-j"><circle cx="525" cy="275" r="18"/><text x="525" y="275">5</text></g>
+      <g class="tree-node" id="node-k"><circle cx="585" cy="275" r="18"/><text x="585" y="275">2</text></g>
+    </svg>
+    <div class="status-log" id="mm-log">Press NEXT to begin stepping through the minimax backup process.</div>
+  </div>
+
+  <div class="card-row">
+    <div class="card">
+      <h3>MAX vs MIN Strategy</h3>
+      <div class="callout">
+        <strong>MAX</strong> represents our agent — wants to <em>maximize</em> utility. Assumes opponent plays optimally.
+      </div>
+      <div class="callout red">
+        <strong>MIN</strong> represents the opponent — wants to <em>minimize</em> MAX's utility. Minimax assumes MIN is also optimal.
+      </div>
+      <p style="font-size:0.82rem;color:var(--muted);line-height:1.6;margin-top:12px;">MAX's strategy must be <strong>contingent</strong> — for every possible MIN move, MAX must have a response. This is why the solution is a conditional plan, not a sequence.</p>
+    </div>
+    <div class="card">
+      <h3>Multiplayer Extension</h3>
+      <p style="font-size:0.82rem;color:#c4c8d4;line-height:1.7;margin-bottom:12px;">With more than 2 players, each node's value becomes a <strong>vector</strong> — one utility value per player. Each player picks the action that maximizes their own component.</p>
+      <div class="callout purple">
+        <strong>Alliance formation:</strong> Multiplayer games often produce informal alliances — coalitions emerge naturally as agents try to maximize individual utility. The game-tree framework can model this by examining each player's vector payoff.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ======================== ALPHA-BETA ======================== -->
+<div id="alphabeta" class="section">
+  <div class="card">
+    <h3>Alpha–Beta Key Insight</h3>
+    <div class="callout green">
+      <strong>Core principle:</strong> If Player has a better choice elsewhere in the tree, Player will never move to node <em>n</em>. Once we've seen enough of <em>n</em>'s descendants to confirm this, we can <strong>prune</strong> the remaining descendants without evaluating them. The result is identical to minimax — but far fewer nodes examined.
+    </div>
+    <div class="formula">
+      <span class="alpha">α</span> = best (highest) value found so far for <span class="alpha">MAX</span>. Think: <span class="alpha">"at least"</span><br>
+      <span class="beta">β</span> = best (lowest) value found so far for <span class="min">MIN</span>. Think: <span class="beta">"at most"</span><br><br>
+      Prune when: current node value ≤ <span class="alpha">α</span> (at MIN node) or ≥ <span class="beta">β</span> (at MAX node)
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Alpha–Beta Step-Through</h3>
+    <div class="ab-tracker">
+      <div class="ab-track-box ab-alpha">
+        <div class="ab-label">ALPHA (α) — MAX's floor</div>
+        <div class="ab-val" id="ab-alpha-val">−∞</div>
+      </div>
+      <div class="ab-track-box ab-beta">
+        <div class="ab-label">BETA (β) — MIN's ceiling</div>
+        <div class="ab-val" id="ab-beta-val">+∞</div>
+      </div>
+    </div>
+    <div class="controls">
+      <button class="ctrl-btn" id="ab-prev" onclick="abStep(-1)" disabled>← PREV</button>
+      <span class="step-counter" id="ab-counter">0 / 9</span>
+      <button class="ctrl-btn" id="ab-next" onclick="abStep(1)">NEXT →</button>
+      <button class="ctrl-btn" onclick="abReset()">RESET</button>
+      <span style="margin-left:auto;font-family:var(--mono);font-size:0.72rem;">
+        <span style="color:var(--pruned-col)">░░</span> = pruned (never evaluated)
+      </span>
+    </div>
+
+    <svg id="ab-svg" viewBox="0 0 700 340">
+      <!-- Edges — same tree, 3 MIN children with 2-3 terminal children each -->
+      <line id="ab-e-r1" class="tree-edge" x1="350" y1="55" x2="140" y2="155"/>
+      <line id="ab-e-r2" class="tree-edge" x1="350" y1="55" x2="350" y2="155"/>
+      <line id="ab-e-r3" class="tree-edge" x1="350" y1="55" x2="560" y2="155"/>
+
+      <line id="ab-e-1a" class="tree-edge" x1="140" y1="175" x2="70" y2="265"/>
+      <line id="ab-e-1b" class="tree-edge" x1="140" y1="175" x2="140" y2="265"/>
+      <line id="ab-e-1c" class="tree-edge" x1="140" y1="175" x2="210" y2="265"/>
+
+      <line id="ab-e-2a" class="tree-edge" x1="350" y1="175" x2="310" y2="265"/>
+      <line id="ab-e-2b" class="tree-edge" x1="350" y1="175" x2="390" y2="265"/>
+
+      <line id="ab-e-3a" class="tree-edge" x1="560" y1="175" x2="490" y2="265"/>
+      <line id="ab-e-3b" class="tree-edge" x1="560" y1="175" x2="560" y2="265"/>
+      <line id="ab-e-3c" class="tree-edge" x1="560" y1="175" x2="630" y2="265"/>
+
+      <!-- Player labels -->
+      <text class="player-badge" x="15" y="60">MAX ▲</text>
+      <text class="player-badge" x="15" y="180">MIN ▽</text>
+      <text class="player-badge" x="15" y="280">TERMINAL</text>
+      <line x1="60" y1="35" x2="700" y2="35" stroke="#252830" stroke-width="1" stroke-dasharray="3,6"/>
+      <line x1="60" y1="155" x2="700" y2="155" stroke="#252830" stroke-width="1" stroke-dasharray="3,6"/>
+      <line x1="60" y1="265" x2="700" y2="265" stroke="#252830" stroke-width="1" stroke-dasharray="3,6"/>
+
+      <g class="tree-node max-node" id="ab-root"><circle cx="350" cy="45" r="22"/><text x="350" y="45" id="ab-val-root">?</text></g>
+      <g class="tree-node min-node" id="ab-b1"><circle cx="140" cy="165" r="22"/><text x="140" y="165" id="ab-val-b1">?</text></g>
+      <g class="tree-node min-node" id="ab-b2"><circle cx="350" cy="165" r="22"/><text x="350" y="165" id="ab-val-b2">?</text></g>
+      <g class="tree-node min-node" id="ab-b3"><circle cx="560" cy="165" r="22"/><text x="560" y="165" id="ab-val-b3">?</text></g>
+
+      <g class="tree-node" id="ab-t1"><circle cx="70" cy="275" r="18"/><text x="70" y="275">3</text></g>
+      <g class="tree-node" id="ab-t2"><circle cx="140" cy="275" r="18"/><text x="140" y="275">12</text></g>
+      <g class="tree-node" id="ab-t3"><circle cx="210" cy="275" r="18"/><text x="210" y="275">8</text></g>
+      <g class="tree-node" id="ab-t4"><circle cx="310" cy="275" r="18"/><text x="310" y="275">2</text></g>
+      <g class="tree-node" id="ab-t5"><circle cx="390" cy="275" r="18"/><text x="390" y="275">4</text></g>
+      <g class="tree-node" id="ab-t6"><circle cx="490" cy="275" r="18"/><text x="490" y="275">14</text></g>
+      <g class="tree-node" id="ab-t7"><circle cx="560" cy="275" r="18"/><text x="560" y="275">5</text></g>
+      <g class="tree-node" id="ab-t8"><circle cx="630" cy="275" r="18"/><text x="630" y="275">2</text></g>
+    </svg>
+    <div class="status-log" id="ab-log">Press NEXT to watch alpha–beta pruning in action. Grey nodes will be pruned.</div>
+  </div>
+
+  <div class="card-row">
+    <div class="card">
+      <h3>Move Ordering Impact</h3>
+      <p style="font-size:0.82rem;color:#c4c8d4;line-height:1.7;margin-bottom:10px;">The effectiveness of pruning depends entirely on <strong>which nodes are examined first</strong>.</p>
+      <div class="eval-bar-wrap">
+        <div class="eval-label"><span>Best ordering (perfect)</span><span style="color:var(--alpha-col)">O(b<sup>m/2</sup>)</span></div>
+        <div class="eval-bar"><div class="eval-bar-fill" style="width:30%;background:var(--alpha-col)"></div></div>
+      </div>
+      <div class="eval-bar-wrap">
+        <div class="eval-label"><span>Dynamic ordering (practical)</span><span style="color:var(--beta-col)">~O(b<sup>3m/4</sup>)</span></div>
+        <div class="eval-bar"><div class="eval-bar-fill" style="width:56%;background:var(--beta-col)"></div></div>
+      </div>
+      <div class="eval-bar-wrap">
+        <div class="eval-label"><span>Random ordering</span><span style="color:var(--min-col)">O(b<sup>m</sup>)</span></div>
+        <div class="eval-bar"><div class="eval-bar-fill" style="width:100%;background:var(--min-col)"></div></div>
+      </div>
+      <p style="font-size:0.78rem;color:var(--muted);margin-top:10px;">With best ordering, alpha–beta can explore trees <strong>twice as deep</strong> as minimax in the same time. Killer move heuristic + iterative deepening gets close to this.</p>
+    </div>
+    <div class="card">
+      <h3>Practical Enhancements</h3>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div class="effect-card">
+          <h4 class="amber">KILLER MOVE HEURISTIC</h4>
+          <p>Try moves that caused cutoffs in sibling nodes first. Prior "killer moves" are reused across similar positions.</p>
+        </div>
+        <div class="effect-card">
+          <h4 class="blue">ITERATIVE DEEPENING</h4>
+          <p>Run alpha–beta to increasing depths. Results from shallower searches inform move ordering for deeper ones.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ======================== HEURISTIC EVAL ======================== -->
+<div id="heuristic" class="section">
+  <div class="card">
+    <h3>H-Minimax — Cutting Off the Search</h3>
+    <div class="formula">
+      H-MINIMAX(s, d) =<br>
+      &nbsp;&nbsp;<span class="alpha">EVAL(s, MAX)</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if IS-CUTOFF(s, d)<br>
+      &nbsp;&nbsp;<span class="max">max</span><sub>a∈ACTIONS(s)</sub> H-MINIMAX(RESULT(s,a), d+1)&nbsp;&nbsp;if TO-MOVE(s)=MAX<br>
+      &nbsp;&nbsp;<span class="min">min</span><sub>a∈ACTIONS(s)</sub> H-MINIMAX(RESULT(s,a), d+1)&nbsp;&nbsp;if TO-MOVE(s)=MIN
+    </div>
+    <div class="callout">
+      Replace <strong>UTILITY</strong> (exact terminal value) with <strong>EVAL</strong> (heuristic estimate). Replace <strong>IS-TERMINAL</strong> with <strong>IS-CUTOFF</strong> (depth limit or other criteria). This makes real games tractable.
+    </div>
+  </div>
+
+  <div class="card-row">
+    <div class="card">
+      <h3>Weighted Linear Evaluation Function</h3>
+      <div class="formula">
+        EVAL(s) = Σ w<sub>i</sub> · f<sub>i</sub>(s)<br><br>
+        = w<sub>1</sub>f<sub>1</sub>(s) + w<sub>2</sub>f<sub>2</sub>(s) + … + w<sub>n</sub>f<sub>n</sub>(s)
+      </div>
+      <p style="font-size:0.82rem;color:#c4c8d4;line-height:1.7;margin-bottom:10px;">Each <strong>f<sub>i</sub></strong> is a feature (e.g., number of queens, rooks, pawns). Each <strong>w<sub>i</sub></strong> is its weight (e.g., queen=9, rook=5, pawn=1).</p>
+      <div class="callout amber">
+        <strong>Independence assumption:</strong> Weighted linear evaluation assumes feature contributions are independent. In reality they're not (a bishop's value changes depending on pawn structure). Real programs use nonlinear combinations.
+      </div>
+      <p style="font-size:0.78rem;color:var(--muted);margin-top:10px;">Requirement: UTILITY(loss) ≤ EVAL(s) ≤ UTILITY(win). Doesn't need to be linearly correlated with win probability — just correctly ordered.</p>
+    </div>
+    <div class="card">
+      <h3>Search Issues &amp; Mitigations</h3>
+      <div class="effect-grid">
+        <div class="effect-card">
+          <h4 class="amber">HORIZON EFFECT</h4>
+          <p>Unavoidable damage lurks just beyond the search depth. The agent uses delaying tactics to "push" the problem past the horizon — appearing to avoid it while really just deferring.</p>
+        </div>
+        <div class="effect-card">
+          <h4 class="green">SINGULAR EXTENSIONS</h4>
+          <p>When one move is clearly better than all others, extend search beyond the normal cutoff for that line. Mitigates horizon effect in forced-move positions.</p>
+        </div>
+        <div class="effect-card">
+          <h4 class="blue">QUIESCENCE SEARCH</h4>
+          <p>Only apply EVAL to "quiet" positions — no captures, checks, or tactical threats pending. Avoids misvaluing positions mid-tactic.</p>
+        </div>
+        <div class="effect-card">
+          <h4 class="purple">FORWARD PRUNING</h4>
+          <p>Beam search or PROBCUT: consider only the N best moves rather than all legal moves. Faster but risks pruning the true best move. Shannon's "Type B" strategy.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Opening &amp; Endgame Table Lookup</h3>
+    <p style="font-size:0.85rem;color:#c4c8d4;line-height:1.7;margin-bottom:10px;">Many programs replace search entirely for known positions:</p>
+    <div class="card-row" style="margin:0;">
+      <div class="callout" style="margin:0;">
+        <strong>Opening books:</strong> Databases of master-level opening sequences. Statistics from millions of played games identify which openings most often win. The computer looks up moves rather than searching.
+      </div>
+      <div class="callout green" style="margin:0;">
+        <strong>Endgame tablebases:</strong> Computer analysis solves endgames completely via retrograde minimax. A <em>policy</em> maps every possible state to the optimal move — this goes far beyond human ability in 7-piece endgames.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ======================== MCTS ======================== -->
+<div id="mcts" class="section">
+  <div class="card">
+    <h3>Monte Carlo Tree Search — Four Phases</h3>
+    <p style="font-size:0.83rem;color:var(--muted);margin-bottom:16px;">MCTS avoids heuristic evaluation functions entirely. Instead, it estimates state values by running many random playouts to terminal states and averaging results.</p>
+    <div class="mcts-phases">
+      <div class="mcts-phase active-phase" id="ph-0" onclick="showPhase(0)">
+        <div class="phase-num">01</div>
+        <div class="phase-name">SELECTION</div>
+        <div class="phase-desc">Walk down the tree using the selection policy (UCT) until a leaf node is reached.</div>
+      </div>
+      <div class="mcts-phase" id="ph-1" onclick="showPhase(1)">
+        <div class="phase-num">02</div>
+        <div class="phase-name">EXPANSION</div>
+        <div class="phase-desc">Add a new child of the selected leaf node to the search tree.</div>
+      </div>
+      <div class="mcts-phase" id="ph-2" onclick="showPhase(2)">
+        <div class="phase-num">03</div>
+        <div class="phase-name">SIMULATION</div>
+        <div class="phase-desc">Run a playout (rollout) from the new node to a terminal state using the playout policy. Not recorded in tree.</div>
+      </div>
+      <div class="mcts-phase" id="ph-3" onclick="showPhase(3)">
+        <div class="phase-num">04</div>
+        <div class="phase-name">BACK-PROP</div>
+        <div class="phase-desc">Propagate the playout result back up through all ancestor nodes, updating N(n) and U(n).</div>
+      </div>
+    </div>
+    <div class="callout purple" id="mcts-detail">
+      <strong>Selection:</strong> Starting at the root, repeatedly choose a child according to the UCT selection policy. This balances exploring new moves against exploiting moves that have done well. Continue until reaching a node with unexpanded children.
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>UCT — Upper Confidence Bounds Applied to Trees</h3>
+    <p style="font-size:0.82rem;color:var(--muted);margin-bottom:12px;">Click each term to understand it:</p>
+    <div class="formula" style="font-size:1rem;line-height:2.5;text-align:center;">
+      UCB1(n) = &nbsp;
+      <span class="uct-term uct-exploit" onclick="uctExplain('exploit')">U(n) / N(n)</span>
+      &nbsp; + &nbsp;
+      <span class="uct-term uct-balance" onclick="uctExplain('balance')">C</span>
+      &nbsp; × &nbsp;
+      <span class="uct-term uct-explore" onclick="uctExplain('explore')">√( log N(PARENT(n)) / N(n) )</span>
+    </div>
+    <div class="uct-tooltip" id="uct-tooltip">Click a term above to see what it means.</div>
+    <div class="callout amber" style="margin-top:14px;">
+      <strong>C constant:</strong> Theoretically √2, but practitioners try multiple values and pick what performs best. C controls the exploitation/exploration tradeoff — higher C = more exploration.
+    </div>
+    <div class="callout green">
+      <strong>Efficiency:</strong> Playout time is <em>linear</em> in tree depth (only one move chosen per level), not exponential — enabling thousands of simulations per second. No heuristic evaluation needed; just the rules of the game.
+    </div>
+  </div>
+
+  <div class="card-row">
+    <div class="card">
+      <h3>Why MCTS for Go?</h3>
+      <div class="callout red">
+        <strong>Alpha-beta fails at Go:</strong> Branching factor starts at 361. Alpha-beta limited to only 4–5 ply. Defining a meaningful evaluation function is extremely hard — material advantage barely predicts outcomes.
+      </div>
+      <p style="font-size:0.82rem;color:#c4c8d4;line-height:1.7;margin-top:10px;">MCTS handles both problems: no evaluation function needed, and branching factor is handled statistically rather than exhaustively.</p>
+    </div>
+    <div class="card">
+      <h3>MCTS Limitations</h3>
+      <div class="callout amber">
+        <strong>Tactical blindness:</strong> The stochastic nature means a critical "one move changes everything" line might never be simulated. Type-B pruning: vital lines can be completely missed.
+      </div>
+      <p style="font-size:0.82rem;color:var(--muted);line-height:1.7;margin-top:10px;">Modern programs (AlphaGo, AlphaZero) combine MCTS with deep neural networks for both the selection policy (replacing UCT's uniformity) and a value network (replacing random playouts).</p>
+    </div>
+  </div>
+</div>
+
+<!-- ======================== STOCHASTIC & PARTIAL ======================== -->
+<div id="stochastic" class="section">
+  <div class="card">
+    <h3>Expectiminimax — Adding Chance Nodes</h3>
+    <div class="formula">
+      EXPECTIMINIMAX(s) =<br>
+      &nbsp;&nbsp;<span class="max">UTILITY(s,MAX)</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if IS-TERMINAL(s)<br>
+      &nbsp;&nbsp;<span class="max">max</span><sub>a</sub> EXPECTIMINIMAX(RESULT(s,a))&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if TO-MOVE(s) = MAX<br>
+      &nbsp;&nbsp;<span class="min">min</span><sub>a</sub> EXPECTIMINIMAX(RESULT(s,a))&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if TO-MOVE(s) = MIN<br>
+      &nbsp;&nbsp;<span class="chance">Σ<sub>r</sub> P(r) · EXPECTIMINIMAX(RESULT(s,r))</span>&nbsp;&nbsp;if TO-MOVE(s) = CHANCE
+    </div>
+    <div class="callout orange">
+      <strong>CHANCE nodes</strong> compute the <em>expected value</em>: sum of all child values weighted by their probability. Terminal and MAX/MIN nodes work exactly as before.
+    </div>
+    <div class="callout amber">
+      <strong>Critical constraint:</strong> The evaluation function must return a <em>positive linear transformation</em> of win probability (not just ordinal rankings). Monotone transformations that preserve order can give wrong answers in stochastic trees.
+    </div>
+  </div>
+
+  <div class="card-row">
+    <div class="card">
+      <h3>Why Alpha-Beta Struggles in Stochastic Games</h3>
+      <p style="font-size:0.82rem;color:#c4c8d4;line-height:1.7;margin-bottom:10px;">Alpha-beta's power comes from ignoring branches that <em>won't happen given best play</em>. But with dice rolls before every move:</p>
+      <div class="callout red">
+        Even the most likely move occurs only ~1/2 the time (the dice must come out right first). There are no "likely sequences." Possibilities multiply enormously. Detailed plans become pointless because the world probably won't cooperate.
+      </div>
+    </div>
+    <div class="card">
+      <h3>Partially Observable Games</h3>
+      <p style="font-size:0.82rem;color:#c4c8d4;line-height:1.7;margin-bottom:10px;">When players can't see the full board, uncertainty arises from opponent choices, not just randomness.</p>
+      <div class="callout purple">
+        <strong>Belief states:</strong> The set of all logically possible board states given the full percept history. AND-OR search over belief-state space finds guaranteed checkmates.
+      </div>
+      <div class="callout green" style="margin-top:10px;">
+        <strong>Probabilistic checkmate:</strong> A strategy that works for <em>some</em> belief states may succeed accidentally. Even a lone king can be found with probability 1 through random movement — detection is guaranteed eventually.
+      </div>
+      <p style="font-size:0.78rem;color:var(--muted);margin-top:10px;line-height:1.6;">Optimal play in partially observable games requires <strong>randomized strategies</strong> — predictable play gives information to the opponent. Game-theoretic equilibria specify optimal randomized strategies for each player.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ======================== COMPARISON ======================== -->
+<div id="compare" class="section">
+  <div class="card">
+    <h3>Algorithm Comparison</h3>
+    <table class="algo-compare">
+      <thead>
+        <tr>
+          <th>Algorithm</th>
+          <th>Time</th>
+          <th>Space</th>
+          <th>Optimal?</th>
+          <th>Best For</th>
+          <th>Key Limitation</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Minimax</td>
+          <td style="font-family:var(--mono);font-size:0.78rem;color:var(--min-col)">O(b<sup>m</sup>)</td>
+          <td style="font-family:var(--mono);font-size:0.78rem;color:var(--muted)">O(bm)</td>
+          <td><span class="tag tag-green">YES</span></td>
+          <td style="font-size:0.8rem;color:var(--muted)">Defining what optimal means</td>
+          <td style="font-size:0.8rem;color:var(--muted)">Intractable for real games</td>
+        </tr>
+        <tr>
+          <td>Alpha–Beta (ideal)</td>
+          <td style="font-family:var(--mono);font-size:0.78rem;color:var(--alpha-col)">O(b<sup>m/2</sup>)</td>
+          <td style="font-family:var(--mono);font-size:0.78rem;color:var(--muted)">O(bm)</td>
+          <td><span class="tag tag-green">YES</span></td>
+          <td style="font-size:0.8rem;color:var(--muted)">Perfect-info deterministic games</td>
+          <td style="font-size:0.8rem;color:var(--muted)">Heuristic evaluation errors</td>
+        </tr>
+        <tr>
+          <td>Alpha–Beta (avg)</td>
+          <td style="font-family:var(--mono);font-size:0.78rem;color:var(--beta-col)">O(b<sup>3m/4</sup>)</td>
+          <td style="font-family:var(--mono);font-size:0.78rem;color:var(--muted)">O(bm)</td>
+          <td><span class="tag tag-green">YES</span></td>
+          <td style="font-size:0.8rem;color:var(--muted)">Chess, Checkers, practical play</td>
+          <td style="font-size:0.8rem;color:var(--muted)">Horizon effect; forward pruning risk</td>
+        </tr>
+        <tr>
+          <td>MCTS</td>
+          <td style="font-family:var(--mono);font-size:0.78rem;color:var(--mcts-col)">Linear / playout</td>
+          <td style="font-family:var(--mono);font-size:0.78rem;color:var(--muted)">O(b·N)</td>
+          <td><span class="tag tag-amber">APPROX</span></td>
+          <td style="font-size:0.8rem;color:var(--muted)">High-b games (Go), no eval function</td>
+          <td style="font-size:0.8rem;color:var(--muted)">Misses single critical moves</td>
+        </tr>
+        <tr>
+          <td>Expectiminimax</td>
+          <td style="font-family:var(--mono);font-size:0.78rem;color:var(--chance-col)">O(b<sup>m</sup>·|dice|)</td>
+          <td style="font-family:var(--mono);font-size:0.78rem;color:var(--muted)">O(bm)</td>
+          <td><span class="tag tag-green">YES</span></td>
+          <td style="font-size:0.8rem;color:var(--muted)">Backgammon, stochastic games</td>
+          <td style="font-size:0.8rem;color:var(--muted)">Branching multiplied by chance outcomes</td>
+        </tr>
+        <tr>
+          <td>Belief-state AND-OR</td>
+          <td style="font-family:var(--mono);font-size:0.78rem;color:var(--muted)">Exponential</td>
+          <td style="font-family:var(--mono);font-size:0.78rem;color:var(--muted)">Exponential</td>
+          <td><span class="tag tag-green">YES</span></td>
+          <td style="font-size:0.8rem;color:var(--muted)">Kriegspiel, poker, imperfect info</td>
+          <td style="font-size:0.8rem;color:var(--muted)">Belief state space is enormous</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card-row">
+    <div class="card">
+      <h3>Four Limitations (R&amp;N's Framing)</h3>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div class="callout red" style="margin:0;">
+          <strong>1. Heuristic errors</strong> — Alpha-beta is vulnerable to flawed evaluation functions. A wrong EVAL cascades through backed-up values.
+        </div>
+        <div class="callout amber" style="margin:0;">
+          <strong>2. Wasted computation</strong> — Both algorithms compute move values even when one move is obviously best (e.g., only one legal move). Metareasoning could skip this.
+        </div>
+        <div class="callout purple" style="margin:0;">
+          <strong>3. Move-level reasoning</strong> — Humans think at higher abstraction (e.g., "trap the queen"). Algorithms think move-by-move. Planning (Ch. 11) addresses this.
+        </div>
+        <div class="callout green" style="margin:0;">
+          <strong>4. Hand-crafted evaluation</strong> — Early programs relied on human expertise for features/weights. Modern programs use machine learning (self-play, neural networks) to learn these automatically.
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>When to Use Which</h3>
+      <div class="callout" style="margin-bottom:10px;">
+        <strong>Use Alpha-Beta when:</strong> branching factor is manageable, a good evaluation function can be defined, game is deterministic and perfect-information.
+      </div>
+      <div class="callout purple" style="margin-bottom:10px;">
+        <strong>Use MCTS when:</strong> branching factor is very high (Go), evaluation function is hard to define, or the game is fully simulatable to terminal states quickly.
+      </div>
+      <div class="callout orange" style="margin-bottom:10px;">
+        <strong>Use Expectiminimax when:</strong> game includes dice or other chance elements (Backgammon). Must ensure evaluation function is a positive linear transform of win probability.
+      </div>
+      <div class="callout green">
+        <strong>Combine:</strong> AlphaZero uses MCTS + neural network policy (selection) + neural network value (replacing rollouts). Both algorithms benefit from iterative deepening and opening/endgame tables.
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===== NAVIGATION ===== */
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+}
+
+/* ===== MINIMAX STEP THROUGH ===== */
+const mmSteps = [
+  {
+    log: '<span style="color:#60a5fa">→ Start</span> at MAX root. Explore left child (a1) first. DFS down to terminal leaves.',
+    nodes: { 'node-root': 'current', 'node-b1': 'visit', 'node-d': 'visit' },
+    vals: {}
+  },
+  {
+    log: '<span style="color:#60a5fa">MIN-b1</span> sees leaf 3. Examining next leaf (12). min(3,12) → still 3 so far.',
+    nodes: { 'node-b1': 'current', 'node-d': 'done', 'node-e': 'visit' },
+    vals: {}
+  },
+  {
+    log: '<span style="color:#60a5fa">MIN-b1</span> sees leaf 8. min(3,12,8) = <strong>3</strong>. Backing up value 3 to b1.',
+    nodes: { 'node-b1': 'done', 'node-f': 'visit' },
+    vals: { 'val-b1': '3' }
+  },
+  {
+    log: '<span style="color:#60a5fa">MIN-b2</span> explores leaves 2 and 4. min(2,4) = <strong>2</strong>. Backing up.',
+    nodes: { 'node-b2': 'done', 'node-g': 'visit', 'node-h': 'visit' },
+    vals: { 'val-b2': '2' }
+  },
+  {
+    log: '<span style="color:#60a5fa">MIN-b3</span> explores leaves 14, 5, 2. min(14,5,2) = <strong>2</strong>. Backing up.',
+    nodes: { 'node-b3': 'done', 'node-i': 'visit', 'node-j': 'visit', 'node-k': 'visit' },
+    vals: { 'val-b3': '2' }
+  },
+  {
+    log: '<span style="color:#60a5fa">MAX root</span> sees children: 3, 2, 2. max(3,2,2) = <strong>3</strong>. Optimal move is <strong style="color:#60a5fa">a1</strong>!',
+    nodes: { 'node-root': 'done' },
+    vals: { 'val-root': '3' }
+  },
+  {
+    log: '✓ <strong>Minimax complete.</strong> MAX picks a1 → MIN responds with the move giving value 3. This is the guaranteed outcome with optimal play from both sides.',
+    nodes: {},
+    vals: {}
+  }
+];
+
+let mmCurrent = -1;
+
+function mmReset() {
+  mmCurrent = -1;
+  ['node-root','node-b1','node-b2','node-b3','node-d','node-e','node-f','node-g','node-h','node-i','node-j','node-k'].forEach(id => {
+    const el = document.getElementById(id);
+    const cls = ['node-root','node-b1','node-b2','node-b3'].includes(id) ?
+      (id==='node-root' ? 'max-node' : 'min-node') : '';
+    el.className = 'tree-node ' + cls;
+  });
+  ['val-root','val-b1','val-b2','val-b3'].forEach(id => { document.getElementById(id).textContent = '?'; });
+  document.getElementById('mm-log').innerHTML = 'Press NEXT to begin stepping through the minimax backup process.';
+  document.getElementById('mm-counter').textContent = '0 / ' + mmSteps.length;
+  document.getElementById('mm-prev').disabled = true;
+  document.getElementById('mm-next').disabled = false;
+}
+
+function mmStep(dir) {
+  mmCurrent = Math.max(-1, Math.min(mmSteps.length - 1, mmCurrent + dir));
+  if (mmCurrent < 0) { mmReset(); return; }
+  const step = mmSteps[mmCurrent];
+  // Apply vals
+  Object.entries(step.vals).forEach(([id, v]) => { document.getElementById(id).textContent = v; });
+  document.getElementById('mm-log').innerHTML = step.log;
+  document.getElementById('mm-counter').textContent = (mmCurrent + 1) + ' / ' + mmSteps.length;
+  document.getElementById('mm-prev').disabled = mmCurrent <= 0;
+  document.getElementById('mm-next').disabled = mmCurrent >= mmSteps.length - 1;
+}
+
+/* ===== ALPHA BETA STEP THROUGH ===== */
+const abSteps = [
+  {
+    log: 'Visit <span style="color:#60a5fa">root (MAX)</span>. α=−∞, β=+∞. Explore left MIN child first.',
+    alpha: '−∞', beta: '+∞',
+    highlight: ['ab-root', 'ab-b1'],
+    pruned: [], vals: {}
+  },
+  {
+    log: '<span style="color:#f87171">MIN-b1</span>: see terminal 3. MIN-b1 value ≤ 3 so far. Update α → the best we\'ve found for MAX is now 3... not yet. Continue.',
+    alpha: '−∞', beta: '+∞',
+    highlight: ['ab-b1', 'ab-t1'], pruned: [], vals: { 'ab-val-b1': '≤3' }
+  },
+  {
+    log: '<span style="color:#f87171">MIN-b1</span>: see 12. min(3,12)=3. See 8. min(3,8)=3. <strong>b1 = 3</strong>. Back up to MAX root — α update: MAX found 3.',
+    alpha: '3', beta: '+∞',
+    highlight: ['ab-b1'], pruned: [], vals: { 'ab-val-b1': '3', 'ab-val-root': '≥3' }
+  },
+  {
+    log: '<span style="color:#f87171">MIN-b2</span>: see terminal 2. Now MIN-b2 = 2 so far. Since 2 < α (3), MAX won\'t pick this — but we continue for completeness.',
+    alpha: '3', beta: '+∞',
+    highlight: ['ab-b2', 'ab-t4'], pruned: [], vals: { 'ab-val-b2': '≤2' }
+  },
+  {
+    log: '<span style="color:var(--pruned-col)">PRUNE b2\'s remaining child!</span> MIN-b2 is already ≤ 2 < α = 3. MAX won\'t choose this path. Skip terminal 4. <strong>b2 = 2</strong>.',
+    alpha: '3', beta: '+∞',
+    highlight: ['ab-b2'], pruned: ['ab-t5'], vals: { 'ab-val-b2': '2' }
+  },
+  {
+    log: '<span style="color:#f87171">MIN-b3</span>: see terminal 14. β (MIN\'s ceiling for this node) not yet triggered. Continue.',
+    alpha: '3', beta: '+∞',
+    highlight: ['ab-b3', 'ab-t6'], pruned: ['ab-t5'], vals: { 'ab-val-b3': '≤14' }
+  },
+  {
+    log: '<span style="color:#f87171">MIN-b3</span>: see terminal 5. min(14,5)=5. Still ≥ α=3, so MAX could pick this.',
+    alpha: '3', beta: '+∞',
+    highlight: ['ab-b3', 'ab-t7'], pruned: ['ab-t5'], vals: { 'ab-val-b3': '≤5' }
+  },
+  {
+    log: '<span style="color:#f87171">MIN-b3</span>: see terminal 2. min(14,5,2)=2. <strong>b3 = 2</strong>. Since 2 < α=3, MAX still prefers a1=3.',
+    alpha: '3', beta: '+∞',
+    highlight: ['ab-b3'], pruned: ['ab-t5'], vals: { 'ab-val-b3': '2' }
+  },
+  {
+    log: '✓ <strong>Alpha-Beta complete.</strong> <span style="color:#60a5fa">ROOT = 3</span>. Same result as minimax, but terminal node 4 was pruned. Computation saved without affecting correctness.',
+    alpha: '3', beta: '+∞',
+    highlight: ['ab-root'], pruned: ['ab-t5'], vals: { 'ab-val-root': '3' }
+  }
+];
+
+let abCurrent = -1;
+
+function abReset() {
+  abCurrent = -1;
+  const nodes = ['ab-root','ab-b1','ab-b2','ab-b3','ab-t1','ab-t2','ab-t3','ab-t4','ab-t5','ab-t6','ab-t7','ab-t8'];
+  nodes.forEach(id => {
+    const el = document.getElementById(id);
+    const base = id==='ab-root' ? 'max-node' : (id.startsWith('ab-b') ? 'min-node' : '');
+    el.className = 'tree-node ' + base;
+  });
+  ['ab-val-root','ab-val-b1','ab-val-b2','ab-val-b3'].forEach(id => { document.getElementById(id).textContent = '?'; });
+  document.getElementById('ab-alpha-val').textContent = '−∞';
+  document.getElementById('ab-beta-val').textContent = '+∞';
+  document.getElementById('ab-log').innerHTML = 'Press NEXT to watch alpha–beta pruning in action. Grey nodes will be pruned.';
+  document.getElementById('ab-counter').textContent = '0 / ' + abSteps.length;
+  document.getElementById('ab-prev').disabled = true;
+  document.getElementById('ab-next').disabled = false;
+}
+
+function abStep(dir) {
+  abCurrent = Math.max(-1, Math.min(abSteps.length - 1, abCurrent + dir));
+  if (abCurrent < 0) { abReset(); return; }
+  const step = abSteps[abCurrent];
+  document.getElementById('ab-alpha-val').textContent = step.alpha;
+  document.getElementById('ab-beta-val').textContent = step.beta;
+
+  // Clear all highlights
+  ['ab-root','ab-b1','ab-b2','ab-b3','ab-t1','ab-t2','ab-t3','ab-t4','ab-t5','ab-t6','ab-t7','ab-t8'].forEach(id => {
+    const el = document.getElementById(id);
+    const base = id==='ab-root' ? 'max-node' : (id.startsWith('ab-b') ? 'min-node' : '');
+    el.className = 'tree-node ' + base;
+  });
+
+  step.highlight.forEach(id => {
+    document.getElementById(id).classList.add('highlighted');
+  });
+  step.pruned.forEach(id => {
+    document.getElementById(id).classList.add('pruned');
+  });
+  Object.entries(step.vals).forEach(([id, v]) => {
+    document.getElementById(id).textContent = v;
+  });
+
+  document.getElementById('ab-log').innerHTML = step.log;
+  document.getElementById('ab-counter').textContent = (abCurrent + 1) + ' / ' + abSteps.length;
+  document.getElementById('ab-prev').disabled = abCurrent <= 0;
+  document.getElementById('ab-next').disabled = abCurrent >= abSteps.length - 1;
+}
+
+/* ===== MCTS PHASES ===== */
+const mctsDetails = [
+  '<strong>Selection:</strong> Starting at the root, repeatedly choose a child according to the UCT selection policy. This balances exploring new moves against exploiting moves that have done well. Continue until reaching a node with unexpanded children (a leaf).',
+  '<strong>Expansion:</strong> Generate a new child node of the selected leaf, adding it to the search tree. This is the node from which the simulation will run. Only this new node is added — the rest of the tree stays intact.',
+  '<strong>Simulation (Playout/Rollout):</strong> From the new node, play moves for both players according to the <em>playout policy</em> (often random, or guided by a fast heuristic) until a terminal state is reached. These moves are <em>not</em> added to the tree.',
+  '<strong>Back-Propagation:</strong> Take the outcome from the simulation and propagate it up through all the nodes from the new child back to the root. Update N(n) (visit count) and U(n) (cumulative utility) for each node. These updated statistics inform future UCT selection.'
+];
+
+function showPhase(idx) {
+  document.querySelectorAll('.mcts-phase').forEach((el, i) => {
+    el.classList.toggle('active-phase', i === idx);
+  });
+  document.getElementById('mcts-detail').innerHTML = mctsDetails[idx];
+}
+
+/* ===== UCT EXPLAIN ===== */
+const uctExplanations = {
+  exploit: '<span style="color:#34d399">U(n) / N(n)</span> — <strong>Exploitation term.</strong> Average utility of all playouts through node n. Nodes that have won more of their simulations get a higher score here. Drives the algorithm toward moves that have historically performed well.',
+  explore: '<span style="color:#fbbf24">√( log N(PARENT) / N(n) )</span> — <strong>Exploration term.</strong> High when N(n) is small relative to parent visits. Rarely visited nodes get a bonus — incentivizing the algorithm to explore moves it hasn\'t tried enough times to accurately evaluate.',
+  balance: '<span style="color:#a78bfa">C</span> — <strong>Exploration constant.</strong> Theoretically √2 ≈ 1.41. Controls how much weight is given to exploration vs. exploitation. Game programmers tune this empirically — higher C = more exploration of uncertain moves.'
+};
+
+function uctExplain(term) {
+  document.getElementById('uct-tooltip').innerHTML = uctExplanations[term];
+}
+</script>
+</body>
+</html>
