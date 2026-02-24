@@ -51,7 +51,7 @@ All HTML files are fully standalone — no installation, no server, no dependenc
 | Week | Chapter(s) | Topic | Status |
 |------|-----------|-------|--------|
 | 1–3 | Ch. 1–3 | Introduction, Agents, Search | ✅ Complete |
-| 4 | Ch. 4–5 | Informed Search, Game Playing | 🔲 Planned |
+| 4 | Ch. 4–5 | Informed Search, Game Playing | ✅ Complete |
 | 5 | Ch. 7–8 | Logical Agents, First-Order Logic | 🔲 Planned |
 | 6 | Ch. 9–10 | Inference, Knowledge Representation | 🔲 Planned |
 | 7 | Ch. 12–13 | Probabilistic Reasoning | 🔲 Planned |
