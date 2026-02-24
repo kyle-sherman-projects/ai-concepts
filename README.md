@@ -1,97 +1,107 @@
-# AI 680 — Study Materials & Interactive Visualizations
+# AI 680 / CS 666 — Study Materials
 
-Course notes, interactive diagrams, and reference materials for **AI 680 / CS 666: Artificial Intelligence — Present and Future** at Long Island University.
-
-Based on Russell & Norvig's *Artificial Intelligence: A Modern Approach* (4th Edition).
-
----
-
-## 📁 Repository Structure
-
-```
-/
-├── Chapters 1–3
-│   ├── index.html                              — Interactive concept explorer
-│   ├── learning_agent_diagram.html             — Learning agent architecture diagram
-│   ├── lifo_fifo_search.html                   — DFS vs BFS / LIFO vs FIFO visualizer
-│   ├── AI_Concepts_Visual_Organizers.pptx      — 10-slide presentation
-│   └── AI_Modern_Approach_Ch1-3_Annotations.md — Study annotations & key terms
-│
-└── (more chapters added as course progresses)
-```
+**Course:** Artificial Intelligence: Present and Future  
+**Institution:** Long Island University — Palmer School  
+**Instructor:** Dr. Kewei "Isaac" Li  
+**Textbook:** Russell & Norvig, *AI: A Modern Approach* (4th ed.)  
+**Term:** Spring 2026
 
 ---
 
-## 📚 Chapters Covered
+## What's in This Repository
 
-### Chapters 1–3 — Introduction, Intelligent Agents, Search
-
-| File | Type | Description |
-|------|------|-------------|
-| `index.html` | Interactive | Concept explorer with hierarchy view, relationships map, learning path timeline, and algorithm comparisons |
-| `learning_agent_diagram.html` | Interactive | Four-component learning agent architecture (Performance Element, Learning Element, Critic, Problem Generator) with real-world examples and tabbed views |
-| `lifo_fifo_search.html` | Interactive | Step-by-step visualizer showing how LIFO stacks produce DFS and FIFO queues produce BFS — includes animated frontier tracking and step log |
-| `AI_Concepts_Visual_Organizers.pptx` | Slides | 10 professionally designed slides covering agent architecture, search strategies, A*, environment properties, and bounded rationality |
-| `AI_Modern_Approach_Ch1-3_Annotations.md` | Reference | 100+ key terms with definitions, historical context, real-world examples, and reflection space — organized by chapter |
+Interactive visualizations, annotations, and reference materials built alongside the course. All HTML files are standalone — open them directly in any browser, no installation required.
 
 ---
 
-## 🚀 Quick Start
+## Interactive Visualizations
 
-All HTML files are fully standalone — no installation, no server, no dependencies.
+### `learning_agent_diagram.html` — Ch. 2: Learning Agents
+Tabbed interactive guide to the four-component learning agent architecture from Russell & Norvig.
 
-1. Click any `.html` file in the repository
-2. Open via GitHub Pages, or clone/download and open locally in any modern browser
-3. Works on desktop and tablet (Chrome/Safari recommended)
-
----
-
-## 🗺️ Roadmap — Upcoming Chapters
-
-| Week | Chapter(s) | Topic | Status |
-|------|-----------|-------|--------|
-| 1–3 | Ch. 1–3 | Introduction, Agents, Search | ✅ Complete |
-| 4 | Ch. 4–5 | Informed Search, Game Playing | ✅ Complete |
-| 5 | Ch. 7–8 | Logical Agents, First-Order Logic | 🔲 Planned |
-| 6 | Ch. 9–10 | Inference, Knowledge Representation | 🔲 Planned |
-| 7 | Ch. 12–13 | Probabilistic Reasoning | 🔲 Planned |
-| 8 | Ch. 13–14 | Bayesian Networks, MDPs | 🔲 Planned |
-| 9 | Ch. 19–20 | Machine Learning | 🔲 Planned |
-| 10 | Ch. 21 | Deep Learning | 🔲 Planned |
-| 11 | Ch. 22, 25 | Reinforcement Learning, Computer Vision | 🔲 Planned |
-| 12 | Ch. 23–24 | NLP, Large Language Models | 🔲 Planned |
-| 13–14 | Ch. 26–27 | Robotics, AI Ethics | 🔲 Planned |
+- **Overview tab:** Annotated SVG diagram of the full agent loop (environment → percepts → performance element → actions → critic → learning element → problem generator)
+- **Component Details tab:** Role, function, and examples for each of the four components
+- **Real Examples tab:** Self-driving cars, AlphaGo, spam filters, and a direct connection to the OULAD project
+- **Non-Learning vs. Learning tab:** Key distinctions, autonomy, and a direct quote from R&N
 
 ---
 
-## 🎓 Course Information
+### `lifo_fifo_search.html` — Ch. 3: DFS & BFS via Data Structures
+Step-through visualization demonstrating that the frontier data structure *is* the search strategy.
 
-- **Course**: AI 680 / CS 666 — Artificial Intelligence: Present and Future
-- **Institution**: Long Island University — Palmer School
-- **Instructor**: Dr. Kewei "Isaac" Li
-- **Term**: Spring 2026
-- **Textbook**: Russell & Norvig, *AI: A Modern Approach*, 4th Edition
-
----
-
-## 🆘 Troubleshooting
-
-**Page doesn't load on tablet** — Use Chrome or Safari with JavaScript enabled. Try clearing cache if needed.
-
-**GitHub Pages shows 404** — Wait 2–3 minutes after enabling Pages. Confirm `index.html` is in the root directory and Pages is enabled under Settings → Pages.
+- Toggle between **DFS (LIFO stack)** and **BFS (FIFO queue)** modes
+- Animated step-by-step traversal of a 9-node tree with live frontier state
+- Step-by-step log table tracking node expanded, nodes added, and frontier contents
+- Summary verdict explaining why you cannot separate strategy from structure
 
 ---
 
-## 📄 License
+### `chapter4_visual_guide.html` — Ch. 4: Local Search & Optimization
+Visual guide to local search algorithms, optimization landscapes, and partially observable problems.
 
-Provided for academic use. Content is based on publicly available AI concepts from Russell & Norvig's textbook.
+- **Landscapes tab:** SVG state-space landscape annotated with local maxima, global maximum, plateaus, ridges, and dead ends
+- **Algorithms tab:** Comparison cards for hill climbing, simulated annealing, local beam search, and genetic algorithms with pros/cons and a selection guide
+- **Continuous Spaces tab:** Gradient descent, Newton-Raphson, constrained optimization
+- **Partial Observability tab:** Sensorless and contingency problems, belief states, AND-OR search
+- **Online Search tab:** LRTA*, competitive ratio, real-time agent constraints
 
-## 🙏 Acknowledgments
+---
 
-- Stuart Russell and Peter Norvig — *AI: A Modern Approach*
-- Dr. Kewei "Isaac" Li — Course Instructor, LIU
-- Claude AI (Anthropic)
+### `ch5_adversarial_search.html` — Ch. 5: Adversarial Search & Games
+Seven-section interactive guide covering the full chapter.
 
-## 📧 Contact
+- **Overview:** Formal game definition table (S₀, TO-MOVE, ACTIONS, RESULT, IS-TERMINAL, UTILITY), three game types (deterministic, stochastic, partial), zero-sum clarification
+- **Minimax:** Step-through two-ply tree with backed-up value animation; MAX/MIN node roles; multiplayer vector extension
+- **Alpha–Beta Pruning:** Live α/β tracker updating each step, pruned node visualization, move ordering impact bars (best vs. random ordering complexity)
+- **Heuristic Evaluation:** H-MINIMAX formula, weighted linear evaluation function, quiescence search, horizon effect, forward pruning
+- **MCTS:** Four clickable phase cards (Selection → Expansion → Simulation → Back-Propagation); interactive UCT formula where each term expands on click
+- **Stochastic & Partial:** Expectiminimax formula with chance nodes, belief states, probabilistic checkmate, equilibrium strategies
+- **Algorithm Comparison:** Full complexity table across all algorithms; R&N's four identified limitations
 
-**Kyle Allen Sherman** · kyle.allen.sherman@pm.me · AI 680, Spring 2026
+---
+
+## Study Documents
+
+### `AI_Modern_Approach_Ch1-3_Annotations.md`
+Structured annotations for Chapters 1–3 with key terms, definitions, real-world examples, and blank reflection space organized in three-column tables.
+
+### `AI_Concepts_Visual_Organizers.pptx`
+Ten-slide PowerPoint with visual concept maps for agent architectures, search strategy comparisons, environment properties, and heuristic design — suitable for review or sharing with classmates.
+
+---
+
+## Course Roadmap
+
+| Week | Topic | Chapters | Visualizations |
+|------|-------|----------|----------------|
+| 1 | Overview & Introduction | Ch. 1 | — |
+| 2 | Intelligent Agents, Basic Search | Ch. 2–3 | `learning_agent_diagram.html` · `lifo_fifo_search.html` |
+| 3 | Informed Search, Game Playing | Ch. 4–5 | `chapter4_visual_guide.html` · `ch5_adversarial_search.html` |
+| 4 | Logical Agents, First Order Logic | Ch. 7–8 | *(planned)* |
+| 5 | Inference, Knowledge Representation | Ch. 9–10 | *(planned)* |
+| 6 | Probabilistic Reasoning | Ch. 12–13 | *(planned)* |
+| 7 | Bayesian Networks, MDPs | Ch. 13–14 | *(planned)* |
+| 8 | Linear Programming, CSP | Ch. 4, 6 | *(planned)* |
+| 9 | Machine Learning | Ch. 19–20 | *(planned)* |
+| 10 | Deep Learning | Ch. 21 | *(planned)* |
+| 11 | Computer Vision, Reinforcement Learning | Ch. 25, 22 | *(planned)* |
+| 12 | NLP, Large Language Models | Ch. 23–24 | *(planned)* |
+| 13–14 | Robotics & AI Ethics | Ch. 26–27 | *(planned)* |
+
+---
+
+## Usage
+
+All HTML files are fully self-contained. To use them:
+
+1. Download the file
+2. Open in any modern browser (Chrome, Firefox, Safari, Edge)
+3. No server, no dependencies, no installation
+
+To share with classmates, either send the file directly or deploy to GitHub Pages (Settings → Pages → main branch).
+
+---
+
+**Kyle Allen Sherman**  
+PhD Program in Information Studies  
+kyle.allen.sherman@pm.me
