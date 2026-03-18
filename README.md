@@ -36,7 +36,6 @@ Based on Russell & Norvig's *Artificial Intelligence: A Modern Approach* (4th Ed
 ## 📚 Chapters Covered
 
 ### Chapters 1–3 — Introduction, Intelligent Agents, Search
-
 | File | Type | Description |
 |------|------|-------------|
 | `index.html` | Interactive | Concept explorer with hierarchy view, relationships map, learning path timeline, and algorithm comparisons |
@@ -44,7 +43,17 @@ Based on Russell & Norvig's *Artificial Intelligence: A Modern Approach* (4th Ed
 | `lifo_fifo_search.html` | Interactive | Step-by-step visualizer showing how LIFO stacks produce DFS and FIFO queues produce BFS — includes animated frontier tracking and step log |
 | `AI_Concepts_Visual_Organizers.pptx` | Slides | 10 professionally designed slides covering agent architecture, search strategies, A*, environment properties, and bounded rationality |
 | `AI_Modern_Approach_Ch1-3_Annotations.md` | Reference | 100+ key terms with definitions, historical context, real-world examples, and reflection space — organized by chapter |
-| `ch6_csp.html` | Interactive | CSP formal definition (X, D, C), constraint types (unary/binary/ternary/global), Alldiff rationale, domain types, scheduling constraint formulas, the constraint propagation vs. search distinction |
+
+### Chapters 4–5 — Local Search, Informed Search, Game Playing
+| File | Type | Description |
+|------|------|-------------|
+| `chapter4_visual_guide.html` | Interactive | Local search algorithms, optimization landscapes, partial observability, and online search — includes animated hill climbing and simulated annealing |
+| `ch5_adversarial_search.html` | Interactive | Minimax, alpha–beta pruning, heuristic evaluation, MCTS, stochastic games, and imperfect information — step-through trees with live α/β tracker |
+
+### Chapter 6 — Constraint Satisfaction Problems
+| File | Type | Description |
+|------|------|-------------|
+| `ch6_csp.html` | Interactive | CSP formal definition, constraint types, AC-3 with animated Australia map coloring, backtracking with conflict-directed backjumping, MRV/LCV heuristics, and graph structure decomposition |
 
 ---
 
