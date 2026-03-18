@@ -1,0 +1,1106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ch. 6 — Constraint Satisfaction Problems</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Fira+Code:wght@300;400;500&display=swap');
+
+:root {
+  --bg: #f5f0e8;
+  --surface: #ede8df;
+  --surface2: #e3ddd3;
+  --border: #c8c0b0;
+  --ink: #1a1612;
+  --muted: #7a7060;
+  --csp-red: #c0392b;
+  --csp-blue: #1a5276;
+  --csp-green: #1e8449;
+  --csp-amber: #b7770d;
+  --csp-purple: #6c3483;
+  --csp-teal: #117a65;
+  --mono: 'Fira Code', monospace;
+  --display: 'Syne', sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: var(--display);
+  background: var(--bg);
+  color: var(--ink);
+  min-height: 100vh;
+  padding: 32px 24px;
+  max-width: 1320px;
+  margin: 0 auto;
+}
+
+/* Grain texture overlay */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+}
+
+.page-wrap { position: relative; z-index: 1; }
+
+.masthead {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: 16px;
+  margin-bottom: 6px;
+  padding-bottom: 20px;
+  border-bottom: 3px solid var(--ink);
+}
+
+h1 {
+  font-size: 3rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--ink);
+}
+
+.tag-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.tag {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  padding: 3px 8px;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  color: var(--muted);
+}
+
+.subtitle {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-bottom: 28px;
+  font-weight: 400;
+}
+
+/* NAV — editorial tab style */
+.nav {
+  display: flex;
+  gap: 0;
+  margin-bottom: 32px;
+  border: 1.5px solid var(--ink);
+  border-radius: 4px;
+  overflow: hidden;
+  flex-wrap: wrap;
+}
+
+.nav-btn {
+  font-family: var(--display);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 10px 18px;
+  background: none;
+  border: none;
+  border-right: 1.5px solid var(--ink);
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s;
+  flex: 1;
+  min-width: 80px;
+}
+
+.nav-btn:last-child { border-right: none; }
+.nav-btn:hover { background: var(--surface2); color: var(--ink); }
+.nav-btn.active { background: var(--ink); color: var(--bg); }
+
+/* SECTIONS */
+.section { display: none; }
+.section.active { display: block; }
+
+/* GRID LAYOUTS */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 16px; }
+@media(max-width:780px) { .two-col, .three-col { grid-template-columns: 1fr; } }
+
+/* CARDS */
+.card {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 6px;
+  padding: 20px 22px;
+  margin-bottom: 16px;
+}
+
+.card h3 {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* CALLOUTS */
+.callout {
+  border-left: 3px solid var(--csp-blue);
+  background: rgba(26,82,118,0.06);
+  padding: 12px 16px;
+  border-radius: 0 4px 4px 0;
+  font-size: 0.83rem;
+  line-height: 1.7;
+  color: #3a3028;
+  margin: 12px 0;
+}
+.callout.red { border-color: var(--csp-red); background: rgba(192,57,43,0.06); }
+.callout.green { border-color: var(--csp-green); background: rgba(30,132,73,0.06); }
+.callout.amber { border-color: var(--csp-amber); background: rgba(183,119,13,0.06); }
+.callout.purple { border-color: var(--csp-purple); background: rgba(108,52,131,0.06); }
+.callout.teal { border-color: var(--csp-teal); background: rgba(17,122,101,0.06); }
+.callout strong { color: var(--ink); }
+
+/* FORMULA */
+.formula {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  padding: 14px 18px;
+  border-radius: 4px;
+  margin: 12px 0;
+  color: #3a3028;
+  line-height: 2;
+  overflow-x: auto;
+}
+.formula .hi-red { color: var(--csp-red); font-weight: 500; }
+.formula .hi-blue { color: var(--csp-blue); font-weight: 500; }
+.formula .hi-green { color: var(--csp-green); font-weight: 500; }
+.formula .hi-amber { color: var(--csp-amber); font-weight: 500; }
+.formula .hi-purple { color: var(--csp-purple); font-weight: 500; }
+
+/* TABLE */
+.data-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+.data-table th {
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 1.5px solid var(--ink);
+  background: var(--surface2);
+}
+.data-table td {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--border);
+  line-height: 1.5;
+  vertical-align: top;
+}
+.data-table td:first-child { font-family: var(--mono); font-size: 0.78rem; color: var(--csp-blue); font-weight: 500; }
+.data-table tr:hover td { background: var(--surface2); }
+
+/* INLINE TAGS */
+.pill {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  font-weight: 500;
+  padding: 2px 7px;
+  border-radius: 2px;
+  margin: 1px;
+  border: 1px solid;
+}
+.pill-red { color: var(--csp-red); border-color: rgba(192,57,43,0.4); background: rgba(192,57,43,0.08); }
+.pill-blue { color: var(--csp-blue); border-color: rgba(26,82,118,0.4); background: rgba(26,82,118,0.08); }
+.pill-green { color: var(--csp-green); border-color: rgba(30,132,73,0.4); background: rgba(30,132,73,0.08); }
+.pill-amber { color: var(--csp-amber); border-color: rgba(183,119,13,0.4); background: rgba(183,119,13,0.08); }
+.pill-purple { color: var(--csp-purple); border-color: rgba(108,52,131,0.4); background: rgba(108,52,131,0.08); }
+.pill-teal { color: var(--csp-teal); border-color: rgba(17,122,101,0.4); background: rgba(17,122,101,0.08); }
+
+/* CONTROLS */
+.controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
+.ctrl-btn {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  padding: 7px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 3px;
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 0.04em;
+}
+.ctrl-btn:hover:not(:disabled) { border-color: var(--ink); background: var(--surface2); }
+.ctrl-btn:disabled { opacity: 0.35; cursor: default; }
+.ctrl-btn.primary { border-color: var(--csp-blue); color: var(--csp-blue); background: rgba(26,82,118,0.06); }
+.ctrl-btn.primary:hover { background: rgba(26,82,118,0.12); }
+
+.step-count { font-family: var(--mono); font-size: 0.7rem; color: var(--muted); min-width: 50px; text-align: center; }
+
+.log-box {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--muted);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  padding: 12px 16px;
+  border-radius: 4px;
+  min-height: 44px;
+  line-height: 1.6;
+  margin-top: 12px;
+}
+
+/* AC-3 visualization */
+.ac3-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media(max-width:700px) { .ac3-grid { grid-template-columns: 1fr; } }
+
+.domain-box {
+  background: var(--surface2);
+  border: 1.5px solid var(--border);
+  border-radius: 4px;
+  padding: 10px 14px;
+  margin: 6px 0;
+  transition: all 0.3s;
+}
+.domain-box.pruned { border-color: var(--csp-red); background: rgba(192,57,43,0.06); }
+.domain-box.solved { border-color: var(--csp-green); background: rgba(30,132,73,0.06); }
+.domain-box.active-node { border-color: var(--csp-blue); background: rgba(26,82,118,0.08); box-shadow: 0 0 0 2px rgba(26,82,118,0.2); }
+
+.domain-label { font-family: var(--mono); font-size: 0.7rem; color: var(--muted); margin-bottom: 4px; letter-spacing: 0.06em; }
+.domain-values { display: flex; gap: 6px; flex-wrap: wrap; }
+.domain-val {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 3px 10px;
+  border-radius: 3px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  transition: all 0.3s;
+}
+.domain-val.removed { text-decoration: line-through; opacity: 0.3; background: rgba(192,57,43,0.1); border-color: rgba(192,57,43,0.3); }
+.domain-val.assigned { background: rgba(30,132,73,0.15); border-color: rgba(30,132,73,0.5); color: var(--csp-green); }
+
+/* MAP COLORING SVG */
+#map-svg { width: 100%; max-width: 480px; height: auto; display: block; margin: 0 auto; }
+.region { cursor: pointer; transition: opacity 0.2s; }
+.region:hover { opacity: 0.85; }
+
+/* QUEUE display */
+.queue-display {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+  min-height: 42px;
+  padding: 8px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  margin: 10px 0;
+}
+.q-item {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 3px;
+  border: 1px solid var(--csp-blue);
+  color: var(--csp-blue);
+  background: rgba(26,82,118,0.08);
+  transition: all 0.3s;
+}
+.q-item.processing { border-color: var(--csp-red); color: var(--csp-red); background: rgba(192,57,43,0.1); }
+
+/* HEURISTIC COMPARE */
+.heur-row {
+  display: grid;
+  grid-template-columns: 140px 1fr 1fr;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+  align-items: start;
+  font-size: 0.82rem;
+}
+.heur-row:last-child { border-bottom: none; }
+.heur-name { font-family: var(--mono); font-size: 0.75rem; color: var(--csp-blue); font-weight: 500; line-height: 1.4; }
+.heur-pick { color: var(--csp-green); font-size: 0.78rem; }
+.heur-skip { color: var(--csp-red); font-size: 0.78rem; }
+
+/* TREE STRUCTURE VIZ */
+#tree-svg { width: 100%; height: auto; overflow: visible; }
+.t-node circle { fill: var(--surface); stroke: var(--border); stroke-width: 1.5; transition: all 0.3s; }
+.t-node.visited circle { stroke: var(--csp-blue); fill: rgba(26,82,118,0.08); }
+.t-node.solution circle { stroke: var(--csp-green); fill: rgba(30,132,73,0.12); stroke-width: 2.5; }
+.t-node.pruned circle { stroke: var(--csp-red); fill: rgba(192,57,43,0.08); }
+.t-node.current circle { stroke: var(--csp-amber); fill: rgba(183,119,13,0.1); stroke-width: 2.5; }
+.t-node text { font-family: var(--mono); font-size: 11px; fill: var(--ink); text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+.t-edge { stroke: var(--border); stroke-width: 1.5; }
+.t-edge.active { stroke: var(--csp-blue); stroke-width: 2; }
+.t-edge.pruned { stroke: var(--csp-red); stroke-dasharray: 4,3; }
+
+/* GRAPH STRUCTURE VIZ */
+.graph-wrap { background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; padding: 16px; margin: 12px 0; }
+
+/* Complexity bars */
+.complexity-row { margin: 10px 0; }
+.complexity-label { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 0.72rem; color: var(--muted); margin-bottom: 4px; }
+.complexity-bar { height: 10px; background: var(--surface2); border-radius: 3px; border: 1px solid var(--border); overflow: hidden; }
+.complexity-fill { height: 100%; border-radius: 3px; transition: width 0.6s ease; }
+
+/* SECTION DIVIDER */
+.divider { border: none; border-top: 1.5px solid var(--border); margin: 20px 0; }
+
+p { font-size: 0.84rem; color: #3a3028; line-height: 1.7; }
+strong { color: var(--ink); }
+</style>
+</head>
+<body>
+<div class="page-wrap">
+
+<div class="masthead">
+  <h1>Constraint Satisfaction Problems</h1>
+  <div class="tag-block">
+    <span class="tag">CHAPTER 6</span>
+    <span class="tag">AI: A MODERN APPROACH</span>
+  </div>
+</div>
+<p class="subtitle">Russell &amp; Norvig (4th ed.) · Interactive Study Guide · Spring 2026</p>
+
+<nav class="nav">
+  <button class="nav-btn active" onclick="show('overview')">Overview</button>
+  <button class="nav-btn" onclick="show('inference')">Inference &amp; AC-3</button>
+  <button class="nav-btn" onclick="show('backtrack')">Backtracking</button>
+  <button class="nav-btn" onclick="show('heuristics')">Heuristics</button>
+  <button class="nav-btn" onclick="show('local')">Local Search</button>
+  <button class="nav-btn" onclick="show('structure')">Graph Structure</button>
+</nav>
+
+<!-- ==================== OVERVIEW ==================== -->
+<div id="overview" class="section active">
+
+  <div class="two-col">
+    <div class="card">
+      <h3>What is a CSP?</h3>
+      <p style="margin-bottom:12px;">A CSP uses a <strong>factored representation</strong> — each state is a set of variables with values, not an atomic black box. This structure enables powerful domain-independent inference techniques unavailable to ordinary search.</p>
+      <div class="formula">
+        CSP = (<span class="hi-blue">X</span>, <span class="hi-red">D</span>, <span class="hi-green">C</span>)<br><br>
+        <span class="hi-blue">X</span> = {X₁, X₂, …, Xₙ}  &nbsp;&nbsp;<span style="color:var(--muted)">// variables</span><br>
+        <span class="hi-red">D</span> = {D₁, D₂, …, Dₙ}  &nbsp;&nbsp;<span style="color:var(--muted)">// domains, one per variable</span><br>
+        <span class="hi-green">C</span> = {C₁, C₂, …, Cₘ}  &nbsp;&nbsp;<span style="color:var(--muted)">// constraints</span><br><br>
+        Each Cⱼ = ⟨<span class="hi-amber">scope</span>, <span class="hi-purple">rel</span>⟩<br>
+        &nbsp;&nbsp;<span class="hi-amber">scope</span>: tuple of variables in the constraint<br>
+        &nbsp;&nbsp;<span class="hi-purple">rel</span>: allowable value combinations
+      </div>
+      <div class="callout amber">
+        <strong>Solution:</strong> A <em>consistent</em> (no constraint violated) and <em>complete</em> (every variable assigned) assignment. Solving a CSP is NP-complete in general — but structure can be exploited to solve efficiently.
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Assignment Terminology</h3>
+      <table class="data-table">
+        <thead><tr><th>Term</th><th>Definition</th></tr></thead>
+        <tbody>
+          <tr><td>consistent</td><td>No constraint is violated by the assignment</td></tr>
+          <tr><td>complete</td><td>Every variable has a value</td></tr>
+          <tr><td>solution</td><td>Consistent <em>and</em> complete assignment</td></tr>
+          <tr><td>partial assignment</td><td>Some variables still unassigned</td></tr>
+          <tr><td>partial solution</td><td>Partial assignment that is consistent</td></tr>
+          <tr><td>no-good</td><td>Minimum set of conflicting variable/value pairs — cached to avoid revisiting</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Constraint Types</h3>
+    <div class="three-col">
+      <div>
+        <div style="font-family:var(--mono);font-size:0.7rem;letter-spacing:0.08em;color:var(--muted);margin-bottom:8px;text-transform:uppercase;">Unary</div>
+        <p style="font-size:0.82rem;margin-bottom:8px;">Restricts a <em>single</em> variable. Example: SA ≠ Green.</p>
+        <div class="formula" style="padding:8px 12px;">⟨{X}, X ≠ Green⟩</div>
+      </div>
+      <div>
+        <div style="font-family:var(--mono);font-size:0.7rem;letter-spacing:0.08em;color:var(--muted);margin-bottom:8px;text-transform:uppercase;">Binary</div>
+        <p style="font-size:0.82rem;margin-bottom:8px;">Relates <em>two</em> variables. A binary CSP has only unary and binary constraints. Maps to graph edges.</p>
+        <div class="formula" style="padding:8px 12px;">⟨{SA, NSW}, SA ≠ NSW⟩</div>
+      </div>
+      <div>
+        <div style="font-family:var(--mono);font-size:0.7rem;letter-spacing:0.08em;color:var(--muted);margin-bottom:8px;text-transform:uppercase;">Global / Higher-Order</div>
+        <p style="font-size:0.82rem;margin-bottom:8px;">Involves an arbitrary number of variables. <strong>Alldiff</strong> is the most common: all variables must differ.</p>
+        <div class="formula" style="padding:8px 12px;">Alldiff(X₁, X₂, … Xₙ)</div>
+      </div>
+    </div>
+    <div class="callout green">
+      <strong>Why Alldiff over binary constraints?</strong> Two reasons: (1) easier and less error-prone to specify, and (2) enables special-purpose inference algorithms that are more efficient than working with primitive binary constraints.
+    </div>
+    <div class="callout amber" style="margin-top:0;">
+      <strong>Preference constraints</strong> indicate which solutions are <em>preferred</em>, not just which are allowed. CSPs with preferences become <strong>constrained optimization problems (COPs)</strong> — solved with optimization search. Linear programs are one class of COP.
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="card">
+      <h3>Domain Types</h3>
+      <table class="data-table">
+        <thead><tr><th>Type</th><th>Example</th><th>Constraint form</th></tr></thead>
+        <tbody>
+          <tr><td>Discrete finite</td><td>Map colors {R,G,B}</td><td>Explicit tuples</td></tr>
+          <tr><td>Discrete infinite</td><td>Integers, strings</td><td>Implicit (T₁+d ≤ T₂)</td></tr>
+          <tr><td>Continuous</td><td>Job start times</td><td>Inequalities, LP</td></tr>
+        </tbody>
+      </table>
+      <div class="callout" style="margin-top:10px;">
+        <strong>Linear programming</strong> (continuous, linear constraints/objectives) is solvable in polynomial time in the number of variables — one of the best-known continuous CSP categories.
+      </div>
+    </div>
+    <div class="card">
+      <h3>Scheduling Constraints (Example)</h3>
+      <p style="margin-bottom:10px;">Job scheduling adds two forms of constraints:</p>
+      <div class="formula">
+        <span style="color:var(--muted)">// Precedence: T₁ before T₂</span><br>
+        T₁ + d₁ ≤ T₂<br><br>
+        <span style="color:var(--muted)">// Disjunctive: no overlap</span><br>
+        (AxleF + 10 ≤ AxleB) <span class="hi-red">OR</span><br>
+        (AxleB + 10 ≤ AxleF)
+      </div>
+      <p style="font-size:0.8rem;color:var(--muted);margin-top:8px;">Disjunctive constraints require one task to fully precede the other — they cannot overlap in time. With infinite domains, constraints must be implicit like this rather than explicit tuples.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>The Key Advantage: Constraint Propagation</h3>
+    <p style="margin-bottom:12px;">Atomic search can only expand nodes. A CSP algorithm has an additional move: <strong>constraint propagation</strong> — using constraints to reduce variable domains, which cascades reductions through the graph. This is what makes CSPs tractable in practice.</p>
+    <div class="callout">
+      <strong>Local consistency:</strong> Each variable is a node, each binary constraint is an edge. Enforcing local consistency at each part of the graph eliminates inconsistent values globally — without exploring the full search tree.
+    </div>
+  </div>
+
+</div>
+
+<!-- ==================== INFERENCE & AC-3 ==================== -->
+<div id="inference" class="section">
+
+  <div class="card">
+    <h3>Consistency Hierarchy</h3>
+    <table class="data-table">
+      <thead><tr><th>Type</th><th>k-value</th><th>What it checks</th><th>Algorithm</th></tr></thead>
+      <tbody>
+        <tr><td>Node consistency</td><td>k=1</td><td>Unary constraints on single variable</td><td>Trivial preprocessing</td></tr>
+        <tr><td>Arc consistency</td><td>k=2</td><td>Binary constraints between variable pairs</td><td>AC-3</td></tr>
+        <tr><td>Path consistency</td><td>k=3</td><td>Triples — infers implicit binary constraints</td><td>PC-2</td></tr>
+        <tr><td>k-consistency</td><td>general k</td><td>Any k−1 assigned → kth always satisfiable</td><td>—</td></tr>
+        <tr><td>Strong n-consistency</td><td>k=n</td><td>Guarantees backtrack-free solution in O(n²d)</td><td>Very expensive</td></tr>
+      </tbody>
+    </table>
+    <div class="callout purple" style="margin-top:12px;">
+      <strong>Arc consistency note:</strong> The name uses "arc" for historical reasons — R&N acknowledge "edge-consistent" would be more accurate given their use of "edge" elsewhere. A variable is arc-consistent if every value in its domain satisfies all its binary constraints.
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>AC-3 — Interactive Step Through</h3>
+    <p style="margin-bottom:14px;font-size:0.83rem;">AC-3 maintains a queue of arcs. It pops an arc (Xᵢ, Xⱼ), makes Xᵢ arc-consistent with Xⱼ, and if Dᵢ shrinks, re-adds all arcs pointing to Xᵢ.</p>
+
+    <div class="ac3-grid">
+      <div>
+        <div style="font-family:var(--mono);font-size:0.7rem;letter-spacing:0.08em;color:var(--muted);margin-bottom:6px;text-transform:uppercase;">Variable Domains (Map Coloring: WA, NT, SA, Q, NSW, V, T)</div>
+        <div id="ac3-domains"></div>
+      </div>
+      <div>
+        <div style="font-family:var(--mono);font-size:0.7rem;letter-spacing:0.08em;color:var(--muted);margin-bottom:6px;text-transform:uppercase;">Arc Queue</div>
+        <div class="queue-display" id="ac3-queue">
+          <span style="font-family:var(--mono);font-size:0.75rem;color:var(--muted);">empty — press NEXT to start</span>
+        </div>
+        <div style="margin-top:12px;">
+          <svg id="map-svg" viewBox="0 0 400 320">
+            <!-- Australia map coloring simplified -->
+            <!-- WA -->
+            <polygon id="reg-WA" class="region" points="20,60 120,60 120,220 20,220" fill="#ddd" stroke="#888" stroke-width="1.5" onclick="selectRegion('WA')"/>
+            <text x="70" y="145" font-family="Fira Code" font-size="14" font-weight="500" text-anchor="middle" fill="#333">WA</text>
+            <!-- NT -->
+            <polygon id="reg-NT" class="region" points="120,60 220,60 220,160 120,160" fill="#ddd" stroke="#888" stroke-width="1.5" onclick="selectRegion('NT')"/>
+            <text x="170" y="115" font-family="Fira Code" font-size="14" font-weight="500" text-anchor="middle" fill="#333">NT</text>
+            <!-- SA -->
+            <polygon id="reg-SA" class="region" points="120,160 220,160 240,220 200,280 120,280 120,220" fill="#ddd" stroke="#888" stroke-width="1.5" onclick="selectRegion('SA')"/>
+            <text x="170" y="230" font-family="Fira Code" font-size="14" font-weight="500" text-anchor="middle" fill="#333">SA</text>
+            <!-- Q -->
+            <polygon id="reg-Q" class="region" points="220,60 320,60 320,180 220,180 220,160" fill="#ddd" stroke="#888" stroke-width="1.5" onclick="selectRegion('Q')"/>
+            <text x="270" y="120" font-family="Fira Code" font-size="14" font-weight="500" text-anchor="middle" fill="#333">Q</text>
+            <!-- NSW -->
+            <polygon id="reg-NSW" class="region" points="220,180 320,180 340,260 240,260 220,220 240,220" fill="#ddd" stroke="#888" stroke-width="1.5" onclick="selectRegion('NSW')"/>
+            <text x="285" y="225" font-family="Fira Code" font-size="11" font-weight="500" text-anchor="middle" fill="#333">NSW</text>
+            <!-- V -->
+            <polygon id="reg-V" class="region" points="240,260 340,260 320,300 240,300" fill="#ddd" stroke="#888" stroke-width="1.5" onclick="selectRegion('V')"/>
+            <text x="290" y="285" font-family="Fira Code" font-size="14" font-weight="500" text-anchor="middle" fill="#333">V</text>
+            <!-- T (Tasmania) -->
+            <ellipse id="reg-T" class="region" cx="300" cy="315" rx="28" ry="14" fill="#ddd" stroke="#888" stroke-width="1.5" onclick="selectRegion('T')"/>
+            <text x="300" y="318" font-family="Fira Code" font-size="11" font-weight="500" text-anchor="middle" fill="#333">T</text>
+            <!-- Constraint edges -->
+            <line x1="120" y1="140" x2="170" y2="115" stroke="#999" stroke-width="1" stroke-dasharray="3,2"/>
+            <line x1="170" y1="115" x2="270" y2="120" stroke="#999" stroke-width="1" stroke-dasharray="3,2"/>
+            <line x1="170" y1="230" x2="70" y2="145" stroke="#999" stroke-width="1" stroke-dasharray="3,2"/>
+            <line x1="170" y1="230" x2="170" y2="115" stroke="#999" stroke-width="1" stroke-dasharray="3,2"/>
+            <line x1="170" y1="230" x2="270" y2="120" stroke="#999" stroke-width="1" stroke-dasharray="3,2"/>
+            <line x1="170" y1="230" x2="285" y2="225" stroke="#999" stroke-width="1" stroke-dasharray="3,2"/>
+            <line x1="285" y1="225" x2="270" y2="120" stroke="#999" stroke-width="1" stroke-dasharray="3,2"/>
+            <line x1="285" y1="225" x2="290" y2="285" stroke="#999" stroke-width="1" stroke-dasharray="3,2"/>
+            <line x1="170" y1="230" x2="290" y2="285" stroke="#999" stroke-width="1" stroke-dasharray="3,2"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button class="ctrl-btn" id="ac3-prev" onclick="ac3Step(-1)" disabled>← PREV</button>
+      <span class="step-count" id="ac3-count">0 / 0</span>
+      <button class="ctrl-btn primary" id="ac3-next" onclick="ac3Step(1)">NEXT →</button>
+      <button class="ctrl-btn" onclick="ac3Reset()">RESET</button>
+    </div>
+    <div class="log-box" id="ac3-log">Press NEXT to begin the AC-3 walkthrough for Australia map coloring with 3 colors {R, G, B}.</div>
+  </div>
+
+  <div class="two-col">
+    <div class="card">
+      <h3>AC-3 Complexity</h3>
+      <div class="formula">
+        n variables, d max domain size<br>
+        e binary constraints → 2e arcs<br><br>
+        <span class="hi-blue">Time: O(ed³)</span><br>
+        Each arc (Xᵢ,Xⱼ) added at most d times<br>
+        Each revision: O(d²) work<br>
+        → 2e · d · d² = O(ed³)
+      </div>
+      <div class="callout green">
+        <strong>Key guarantee:</strong> If AC-3 empties a domain → no solution exists (fail fast). If it terminates without failure → equivalent CSP with smaller domains, faster to search.
+      </div>
+    </div>
+    <div class="card">
+      <h3>Bounds Propagation</h3>
+      <p style="margin-bottom:10px;">For large resource-limited problems with integer values, domains are represented as <strong>[lower bound, upper bound]</strong> ranges rather than explicit sets.</p>
+      <div class="formula">
+        Bounds-consistent: for every X,<br>
+        and for <span class="hi-red">both</span> bounds of X,<br>
+        ∃ value of Y satisfying<br>
+        constraint between X and Y
+      </div>
+      <div class="callout amber">
+        <strong>Atmost constraint:</strong> A resource constraint (e.g., total crew hours ≤ budget) is handled via bounds propagation rather than explicit enumeration — essential for real-world scheduling.
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Forward Checking vs. MAC</h3>
+    <div class="two-col" style="margin:0;">
+      <div>
+        <div class="callout" style="margin:0 0 10px 0;">
+          <strong>Forward Checking:</strong> After assigning Xi=v, look ahead and remove from neighbors' domains any value inconsistent with v. Simple, but only one step ahead — doesn't detect all inconsistencies.
+        </div>
+        <p style="font-size:0.8rem;color:var(--muted);">Problem: FC can miss cases where two unassigned variables become mutually inconsistent even without a direct connection to the current assignment.</p>
+      </div>
+      <div>
+        <div class="callout green" style="margin:0 0 10px 0;">
+          <strong>MAC (Maintaining Arc Consistency):</strong> After each assignment, runs AC-3 over the remaining arcs. Much more powerful — propagates reductions across the entire constraint graph, not just immediate neighbors.
+        </div>
+        <p style="font-size:0.8rem;color:var(--muted);">MAC catches all inconsistencies that FC misses. Combined with MRV, this is the standard approach for hard CSPs.</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ==================== BACKTRACKING ==================== -->
+<div id="backtrack" class="section">
+
+  <div class="card">
+    <h3>Backtracking Search — Key Properties</h3>
+    <div class="two-col" style="margin:0;">
+      <div>
+        <p style="margin-bottom:10px;">Backtracking exploits commutativity: CSPs are <strong>commutative</strong> — the order of assignment doesn't matter, so we only need to consider one variable at a time at each depth level. This collapses n! orderings into a single tree.</p>
+        <div class="callout">
+          <strong>Single state representation:</strong> Unlike tree search which creates new state objects, backtracking keeps a single assignment and <em>alters</em> it — reversing changes on backtrack. Memory efficient.
+        </div>
+      </div>
+      <div>
+        <p style="margin-bottom:10px;">Unlike uninformed search (which needs domain-specific heuristics), backtracking can be improved with <strong>domain-independent heuristics</strong> that exploit the factored CSP representation:</p>
+        <ul style="margin-left:16px;font-size:0.83rem;color:#3a3028;line-height:2;">
+          <li>Which variable to assign next?</li>
+          <li>In what order to try its values?</li>
+          <li>What inference to run after each assignment?</li>
+          <li>When to backtrack, and how far?</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Backjumping vs. Chronological Backtracking</h3>
+    <p style="margin-bottom:12px;"><strong>Chronological backtracking</strong> always returns to the most recent decision. But the conflict may have been caused by a variable much further back — so chronological backtracking wastes time on irrelevant intermediate assignments.</p>
+
+    <div class="two-col" style="margin:0;">
+      <div>
+        <div class="callout red" style="margin:0;">
+          <strong>Simple backjumping:</strong> Tracks each variable's <em>conflict set</em> — the assignments that caused it trouble. Jumps back to the most recent member of that set, skipping irrelevant variables in between.
+          <br><br>
+          <strong>But:</strong> Forward checking already detects everything backjumping would catch, so simple backjumping is redundant in FC search — you only need one or the other.
+        </div>
+      </div>
+      <div>
+        <div class="callout purple" style="margin:0;">
+          <strong>Conflict-directed backjumping (CBJ):</strong> Uses a deeper definition of conflict set — the set of preceding variables that caused the current variable <em>and</em> subsequent variables to have no consistent solution together. When backjumping, merges conflict sets:
+          <div class="formula" style="margin-top:8px;padding:8px 12px;font-size:0.75rem;">
+            conf(Xᵢ) ← conf(Xᵢ) ∪ conf(Xⱼ) − {Xᵢ}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout green" style="margin-top:12px;">
+      <strong>Constraint learning / No-goods:</strong> When a conflict is found, record a <em>no-good</em> — the minimum set of variables and values that caused the failure. Add a new constraint forbidding this combination (or cache it). Over time this prunes the search space dramatically. One of the most important techniques in modern CSP solvers.
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Backtracking Tree — Step Through</h3>
+    <p style="margin-bottom:12px;font-size:0.83rem;">3-coloring of WA, NT, SA. Variables assigned in order: WA → NT → SA. Exploring branches until conflict or solution.</p>
+    <div class="controls">
+      <button class="ctrl-btn" id="bt-prev" onclick="btStep(-1)" disabled>← PREV</button>
+      <span class="step-count" id="bt-count">0 / 8</span>
+      <button class="ctrl-btn primary" id="bt-next" onclick="btStep(1)">NEXT →</button>
+      <button class="ctrl-btn" onclick="btReset()">RESET</button>
+      <span style="margin-left:auto;font-family:var(--mono);font-size:0.7rem;color:var(--muted);">
+        <span style="color:var(--csp-amber)">●</span> current &nbsp;
+        <span style="color:var(--csp-red)">●</span> conflict &nbsp;
+        <span style="color:var(--csp-green)">●</span> partial solution
+      </span>
+    </div>
+    <svg id="tree-svg" viewBox="0 0 700 360">
+      <!-- Edges -->
+      <line id="bt-e1" class="t-edge" x1="350" y1="45" x2="130" y2="125"/>
+      <line id="bt-e2" class="t-edge" x1="350" y1="45" x2="350" y2="125"/>
+      <line id="bt-e3" class="t-edge" x1="350" y1="45" x2="570" y2="125"/>
+      <line id="bt-e4" class="t-edge" x1="130" y1="145" x2="70" y2="225"/>
+      <line id="bt-e5" class="t-edge" x1="130" y1="145" x2="190" y2="225"/>
+      <line id="bt-e6" class="t-edge" x1="350" y1="145" x2="300" y2="225"/>
+      <line id="bt-e7" class="t-edge" x1="350" y1="145" x2="400" y2="225"/>
+      <line id="bt-e8" class="t-edge" x1="570" y1="145" x2="510" y2="225"/>
+      <line id="bt-e9" class="t-edge" x1="570" y1="145" x2="630" y2="225"/>
+      <!-- Deeper: WA=R, NT=G, SA options -->
+      <line id="bt-e10" class="t-edge" x1="70" y1="245" x2="40" y2="320"/>
+      <line id="bt-e11" class="t-edge" x1="70" y1="245" x2="100" y2="320"/>
+      <!-- WA=R, NT=B, SA options -->
+      <line id="bt-e12" class="t-edge" x1="190" y1="245" x2="160" y2="320"/>
+      <line id="bt-e13" class="t-edge" x1="190" y1="245" x2="220" y2="320"/>
+
+      <!-- Depth labels -->
+      <text x="12" y="48" font-family="Fira Code" font-size="9" fill="#7a7060">WA</text>
+      <text x="12" y="148" font-family="Fira Code" font-size="9" fill="#7a7060">NT</text>
+      <text x="12" y="248" font-family="Fira Code" font-size="9" fill="#7a7060">SA</text>
+
+      <!-- Level lines -->
+      <line x1="30" y1="30" x2="690" y2="30" stroke="#c8c0b0" stroke-width="1" stroke-dasharray="3,6"/>
+      <line x1="30" y1="130" x2="690" y2="130" stroke="#c8c0b0" stroke-width="1" stroke-dasharray="3,6"/>
+      <line x1="30" y1="230" x2="450" y2="230" stroke="#c8c0b0" stroke-width="1" stroke-dasharray="3,6"/>
+
+      <!-- Root -->
+      <g class="t-node" id="bt-n0"><circle cx="350" cy="35" r="20"/><text x="350" y="35">Start</text></g>
+      <!-- WA assignments -->
+      <g class="t-node" id="bt-n1"><circle cx="130" cy="135" r="20"/><text x="130" y="135">WA=R</text></g>
+      <g class="t-node" id="bt-n2"><circle cx="350" cy="135" r="20"/><text x="350" y="135">WA=G</text></g>
+      <g class="t-node" id="bt-n3"><circle cx="570" cy="135" r="20"/><text x="570" y="135">WA=B</text></g>
+      <!-- NT assignments under WA=R -->
+      <g class="t-node" id="bt-n4"><circle cx="70" cy="235" r="20"/><text x="70" y="235">NT=G</text></g>
+      <g class="t-node" id="bt-n5"><circle cx="190" cy="235" r="20"/><text x="190" y="235">NT=B</text></g>
+      <!-- NT assignments under WA=G -->
+      <g class="t-node" id="bt-n6"><circle cx="300" cy="235" r="20"/><text x="300" y="235">NT=R</text></g>
+      <g class="t-node" id="bt-n7"><circle cx="400" cy="235" r="20"/><text x="400" y="235">NT=B</text></g>
+      <!-- NT=G conflict, NT=B conflict under WA=B -->
+      <g class="t-node" id="bt-n8"><circle cx="510" cy="235" r="20"/><text x="510" y="235">NT=R</text></g>
+      <g class="t-node" id="bt-n9"><circle cx="630" cy="235" r="20"/><text x="630" y="235">NT=G</text></g>
+      <!-- SA options under WA=R,NT=G -->
+      <g class="t-node" id="bt-n10"><circle cx="40" cy="320" r="18"/><text x="40" y="320">SA=B</text></g>
+      <!-- SA options under WA=R,NT=B -->
+      <g class="t-node" id="bt-n11"><circle cx="100" cy="320" r="18"/><text x="100" y="320">SA=R</text></g>
+      <g class="t-node" id="bt-n12"><circle cx="160" cy="320" r="18"/><text x="160" y="320">SA=G</text></g>
+      <g class="t-node" id="bt-n13"><circle cx="220" cy="320" r="18"/><text x="220" y="320">SA=R</text></g>
+    </svg>
+    <div class="log-box" id="bt-log">Press NEXT to step through backtracking. Watch how conflicts are detected and the algorithm backtracks to try other values.</div>
+  </div>
+
+</div>
+
+<!-- ==================== HEURISTICS ==================== -->
+<div id="heuristics" class="section">
+
+  <div class="card">
+    <h3>Variable Ordering — MRV (Minimum Remaining Values)</h3>
+    <div class="two-col" style="margin:0;">
+      <div>
+        <p style="margin-bottom:10px;">Choose the variable with the <strong>fewest legal values</strong> remaining in its domain. Also called the <em>most constrained variable</em> or <em>fail-first</em> heuristic.</p>
+        <div class="callout red">
+          <strong>Fail-first rationale:</strong> By picking the variable most likely to fail soon, we prune the search tree earlier rather than discovering the failure deeper in. This is purely domain-independent — works for any CSP.
+        </div>
+        <div class="callout amber" style="margin-top:8px;">
+          <strong>Degree heuristic (tiebreaker):</strong> When MRV is tied, choose the variable with the most constraints on remaining unassigned variables. Reduces future branching factor.
+        </div>
+      </div>
+      <div>
+        <div style="font-family:var(--mono);font-size:0.7rem;letter-spacing:0.08em;color:var(--muted);margin-bottom:8px;text-transform:uppercase;">MRV Example — Which Variable Next?</div>
+        <div id="mrv-demo"></div>
+        <div class="callout green" style="margin-top:10px;">
+          <strong>Combined power:</strong> MRV + forward checking work well together. FC tells us when a domain has been reduced, giving MRV accurate information about which variable is most constrained.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Value Ordering — Least Constraining Value (LCV)</h3>
+    <p style="margin-bottom:12px;">Once a variable is selected, prefer the value that <strong>rules out the fewest choices</strong> for neighboring variables in the constraint graph.</p>
+    <div class="two-col" style="margin:0;">
+      <div>
+        <div class="callout">
+          <strong>Asymmetry of intent:</strong> For variable ordering (MRV), we want to <em>fail fast</em>. For value ordering (LCV), we want to <em>succeed</em> — we need only one solution, so try the most likely values first. These goals are not in conflict: MRV picks the hardest variable, LCV picks its easiest value.
+        </div>
+      </div>
+      <div>
+        <div class="formula">
+          LCV prefers: value v for Xᵢ<br>
+          that eliminates fewest values<br>
+          from domains of Xᵢ's neighbors<br><br>
+          <span style="color:var(--muted)">Goal: keep future options open</span><br>
+          <span style="color:var(--muted)">Only need ONE solution → try</span><br>
+          <span style="color:var(--muted)">most promising values first</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>All Three Heuristics — When to Use What</h3>
+    <div style="border: 1.5px solid var(--border); border-radius: 4px; overflow: hidden;">
+      <div style="display:grid;grid-template-columns:140px 1fr 1fr;gap:0;background:var(--surface2);padding:8px 12px;border-bottom:1px solid var(--border);">
+        <span style="font-family:var(--mono);font-size:0.65rem;letter-spacing:0.1em;color:var(--muted);text-transform:uppercase;">Heuristic</span>
+        <span style="font-family:var(--mono);font-size:0.65rem;letter-spacing:0.1em;color:var(--muted);text-transform:uppercase;">Applied To</span>
+        <span style="font-family:var(--mono);font-size:0.65rem;letter-spacing:0.1em;color:var(--muted);text-transform:uppercase;">Logic</span>
+      </div>
+      <div class="heur-row">
+        <div class="heur-name">MRV<br><span style="color:var(--muted);font-size:0.68rem;">fail-first</span></div>
+        <div class="heur-pick"><strong style="color:var(--ink)">Variable selection</strong><br>Which variable to assign next?</div>
+        <div>Fewest legal values → most likely to fail → prune early</div>
+      </div>
+      <div class="heur-row">
+        <div class="heur-name">Degree<br><span style="color:var(--muted);font-size:0.68rem;">tiebreaker</span></div>
+        <div class="heur-pick"><strong style="color:var(--ink)">Variable selection</strong><br>Tiebreak for MRV</div>
+        <div>Most constraints on unassigned neighbors → greatest influence on future</div>
+      </div>
+      <div class="heur-row" style="border-bottom:none;">
+        <div class="heur-name">LCV<br><span style="color:var(--muted);font-size:0.68rem;">succeed-first</span></div>
+        <div class="heur-pick"><strong style="color:var(--ink)">Value ordering</strong><br>What value to try first?</div>
+        <div>Least constraining on neighbors → keeps most options open → we only need one solution</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ==================== LOCAL SEARCH ==================== -->
+<div id="local" class="section">
+
+  <div class="card">
+    <h3>Local Search for CSPs</h3>
+    <p style="margin-bottom:12px;">Local search uses a <strong>complete-state formulation</strong>: start with all variables assigned (possibly violating constraints), then repair violations iteratively. Effective for many large CSPs where backtracking would be impractical.</p>
+    <div class="callout green">
+      <strong>Min-conflicts heuristic:</strong> When reassigning a variable, choose the value that results in the <em>minimum number of conflicts</em> with other variables. Surprisingly effective — can solve n-queens for n=10⁶ in roughly n steps.
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="card">
+      <h3>Plateau Navigation Techniques</h3>
+      <p style="margin-bottom:10px;">The min-conflicts landscape typically has <strong>plateaus</strong> — flat regions where all neighbors have equal conflict counts. Two techniques help escape:</p>
+      <div class="callout amber">
+        <strong>Tabu search:</strong> Keep a small list of recently visited states. Forbid returning to those states. Forces exploration of new territory on the plateau.
+      </div>
+      <div class="callout purple" style="margin-top:8px;">
+        <strong>Constraint weighting:</strong> Give each constraint a numeric weight (all start at 1). At each step, choose variable/value minimizing total <em>weighted</em> violated constraints. Then increment weights of currently-violated constraints.<br><br>
+        Two benefits: (1) adds topography to plateaus, (2) learning — difficult constraints accumulate higher weights over time.
+      </div>
+    </div>
+    <div class="card">
+      <h3>Backtracking vs. Local Search</h3>
+      <table class="data-table">
+        <thead><tr><th>Property</th><th>Backtracking</th><th>Local Search</th></tr></thead>
+        <tbody>
+          <tr><td>State formulation</td><td>Partial (build up)</td><td>Complete (repair)</td></tr>
+          <tr><td>Memory</td><td>Single state + path</td><td>Single state only</td></tr>
+          <tr><td>Completeness</td><td>Yes (with inference)</td><td>No (can get stuck)</td></tr>
+          <tr><td>Best for</td><td>Hard structured problems</td><td>Large overconstrained problems</td></tr>
+          <tr><td>Plateau handling</td><td>Backjumping, no-goods</td><td>Tabu, constraint weighting</td></tr>
+        </tbody>
+      </table>
+      <div class="callout teal" style="margin-top:10px;">
+        <strong>Practical note:</strong> For real-world scheduling and assignment problems (timetabling, crew scheduling), local search with constraint weighting often outperforms backtracking because the structure is overconstrained and solutions are approximate anyway.
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ==================== GRAPH STRUCTURE ==================== -->
+<div id="structure" class="section">
+
+  <div class="card">
+    <h3>Why Graph Structure Matters</h3>
+    <p style="margin-bottom:12px;">The topology of the constraint graph determines tractability. Independent subproblems can be solved separately, and tree-structured graphs can be solved in linear time.</p>
+    <div class="callout green">
+      <strong>Independence:</strong> Find connected components of the constraint graph. Solve each subproblem separately. If assignment Sᵢ solves CSPᵢ, then ⋃ Sᵢ solves the full CSP. Dividing a Boolean CSP with 100 variables into four subproblems: worst-case time drops from <em>universe lifetime</em> to <em>under a second</em>.
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="card">
+      <h3>Tree-Structured CSPs — Linear Time</h3>
+      <p style="margin-bottom:10px;">Any tree-structured CSP (constraint graph is a tree — any two variables connected by only one path) can be solved in <strong>O(nd²)</strong> time.</p>
+      <div class="formula">
+        Algorithm (TREE-CSP-SOLVER):<br>
+        1. Pick root variable<br>
+        2. <span class="hi-blue">Topological sort</span> the variables<br>
+        3. For j = n down to 2:<br>
+        &nbsp;&nbsp;&nbsp;MAKE-ARC-CONSISTENT(<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;PARENT(Xⱼ), Xⱼ)<br>
+        4. Assign variables root → leaf<br>
+        &nbsp;&nbsp;(no backtracking needed)<br><br>
+        <span class="hi-green">Time: O(nd²)</span>
+      </div>
+      <div class="callout green">
+        <strong>Why no backtracking?</strong> After directional arc-consistency (DAC), every parent→child arc is arc-consistent. For any value chosen for the parent, a valid child value is guaranteed to exist.
+      </div>
+    </div>
+    <div class="card">
+      <h3>Reducing to Trees</h3>
+      <p style="margin-bottom:10px;">Two strategies for converting a general graph to a tree:</p>
+      <div class="callout red" style="margin-bottom:10px;">
+        <strong>Cycle cutset conditioning:</strong> Find a subset S of variables (the cycle cutset) whose removal makes the graph a tree. Try all consistent assignments to S. For each, solve the resulting tree. Works in linear memory. Finding the <em>minimum</em> cutset is NP-hard, but good approximations exist.
+      </div>
+      <div class="callout purple">
+        <strong>Tree decomposition:</strong> Collapse groups of variables into "mega-nodes" so the resulting graph of mega-nodes is a tree. Solve with TREE-CSP-SOLVER on the decomposed graph.<br><br>
+        <strong>Tree width w:</strong> one less than the size of the largest mega-node. CSPs with bounded tree width are solvable in <span style="font-family:var(--mono)">O(nd^(w+1))</span> — polynomial time. Finding minimum tree width is NP-hard, but heuristics work well.
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Complexity Summary by Graph Structure</h3>
+    <table class="data-table" style="margin-bottom:14px;">
+      <thead><tr><th>Structure</th><th>Time</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>General CSP</td><td style="font-family:var(--mono);font-size:0.78rem;color:var(--csp-red)">NP-complete</td><td>No exploitable structure</td></tr>
+        <tr><td>Independent subproblems</td><td style="font-family:var(--mono);font-size:0.78rem;color:var(--csp-amber)">Exponential → linear</td><td>Each component solved separately</td></tr>
+        <tr><td>Tree-structured</td><td style="font-family:var(--mono);font-size:0.78rem;color:var(--csp-green)">O(nd²)</td><td>Topological sort + DAC → linear scan</td></tr>
+        <tr><td>Cutset conditioning</td><td style="font-family:var(--mono);font-size:0.78rem;color:var(--csp-amber)">O(dᶜ · nd²)</td><td>c = cutset size; linear memory</td></tr>
+        <tr><td>Tree decomposition (width w)</td><td style="font-family:var(--mono);font-size:0.78rem;color:var(--csp-amber)">O(nd^(w+1))</td><td>Polynomial if w bounded; exp. memory</td></tr>
+        <tr><td>Strong n-consistency</td><td style="font-family:var(--mono);font-size:0.78rem;color:var(--csp-blue)">O(n²d) assignment</td><td>Backtrack-free, but achieving it is expensive</td></tr>
+      </tbody>
+    </table>
+    <div class="callout amber">
+      <strong>Tradeoff:</strong> Cutset conditioning favors tree decomposition in time but runs in linear memory. Tree decomposition is faster when tree width is small but requires memory exponential in w.
+    </div>
+    <div class="callout teal" style="margin-top:8px;">
+      <strong>Symmetry breaking:</strong> Many CSPs have value symmetry — permuting the values of a solution gives another solution. Introducing a <em>symmetry-breaking constraint</em> (e.g., enforce a canonical ordering) reduces the search space by d! for d symmetric values.
+    </div>
+  </div>
+
+</div>
+
+</div><!-- /page-wrap -->
+<script>
+/* NAV */
+function show(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+}
+
+/* ====== AC-3 SIMULATION ====== */
+const COLORS = ['R', 'G', 'B'];
+const MAP_COLORS = { R: '#c0392b', G: '#1e8449', B: '#1a5276' };
+const NEIGHBORS = {
+  WA: ['NT','SA'], NT: ['WA','SA','Q'], SA: ['WA','NT','Q','NSW','V'],
+  Q: ['NT','SA','NSW'], NSW: ['SA','Q','V'], V: ['SA','NSW'], T: []
+};
+const REGION_POS = { WA:[70,145], NT:[170,115], SA:[170,230], Q:[270,120], NSW:[285,225], V:[290,285], T:[300,315] };
+
+const ac3Steps = [
+  { log: 'Initialize: all domains = {R,G,B}. AC-3 adds all arcs to queue (each binary constraint → 2 arcs). Begin processing.', domains: {WA:['R','G','B'],NT:['R','G','B'],SA:['R','G','B'],Q:['R','G','B'],NSW:['R','G','B'],V:['R','G','B'],T:['R','G','B']}, queue: ['(WA,NT)','(WA,SA)','(NT,SA)','(NT,Q)','(SA,Q)','(SA,NSW)','(SA,V)','(Q,NSW)','(NSW,V)'], active: null },
+  { log: 'Pop (WA,NT). Make WA arc-consistent with NT. For each value v in WA, ∃ value in NT with NT≠WA? Yes for all 3 colors. Domain unchanged.', domains: {WA:['R','G','B'],NT:['R','G','B'],SA:['R','G','B'],Q:['R','G','B'],NSW:['R','G','B'],V:['R','G','B'],T:['R','G','B']}, queue: ['(WA,SA)','(NT,SA)','(NT,Q)','(SA,Q)','(SA,NSW)','(SA,V)','(Q,NSW)','(NSW,V)'], active: 'WA' },
+  { log: 'With 3 colors and many variables, no unary reductions occur — every value for every variable has a supporting value in every neighbor. AC-3 terminates: CSP is already arc-consistent. Search can begin.', domains: {WA:['R','G','B'],NT:['R','G','B'],SA:['R','G','B'],Q:['R','G','B'],NSW:['R','G','B'],V:['R','G','B'],T:['R','G','B']}, queue: [], active: null },
+  { log: 'Now watch what happens if we ASSIGN WA=R. Forward checking propagates: NT domain loses R → NT={G,B}. SA domain loses R → SA={G,B}.', domains: {WA:['R'],NT:['G','B'],SA:['G','B'],Q:['R','G','B'],NSW:['R','G','B'],V:['R','G','B'],T:['R','G','B']}, queue: [], active: 'WA', assigned: {WA:'R'} },
+  { log: 'Assign NT=G. SA loses G (adjacent to both WA=R and NT=G) → SA={B}. Q loses G → Q={R,B}.', domains: {WA:['R'],NT:['G'],SA:['B'],Q:['R','B'],NSW:['R','G','B'],V:['R','G','B'],T:['R','G','B']}, queue: [], active: 'NT', assigned: {WA:'R',NT:'G'} },
+  { log: 'SA is forced: SA={B} → assign SA=B. Now: Q loses B → Q={R}. NSW loses B → NSW={R,G}. V loses B → V={R,G}.', domains: {WA:['R'],NT:['G'],SA:['B'],Q:['R'],NSW:['R','G'],V:['R','G'],T:['R','G','B']}, queue: [], active: 'SA', assigned: {WA:'R',NT:'G',SA:'B'} },
+  { log: 'Q forced: Q={R} → assign Q=R. NSW loses R → NSW={G}. NSW is forced. NSW loses G neighbors: V loses G → V={R}.', domains: {WA:['R'],NT:['G'],SA:['B'],Q:['R'],NSW:['G'],V:['R'],T:['R','G','B']}, queue: [], active: 'Q', assigned: {WA:'R',NT:'G',SA:'B',Q:'R'} },
+  { log: '✓ Solution found: WA=R, NT=G, SA=B, Q=R, NSW=G, V=R, T=any. Constraint propagation made much of the work trivial — domains collapsed without backtracking.', domains: {WA:['R'],NT:['G'],SA:['B'],Q:['R'],NSW:['G'],V:['R'],T:['R','G','B']}, queue: [], active: null, assigned: {WA:'R',NT:'G',SA:'B',Q:'R',NSW:'G',V:'R'} }
+];
+
+let ac3Cur = -1;
+
+function ac3Reset() {
+  ac3Cur = -1;
+  renderAC3(-1);
+  document.getElementById('ac3-log').textContent = 'Press NEXT to begin the AC-3 walkthrough for Australia map coloring with 3 colors {R, G, B}.';
+  document.getElementById('ac3-count').textContent = '0 / ' + ac3Steps.length;
+  document.getElementById('ac3-prev').disabled = true;
+  document.getElementById('ac3-next').disabled = false;
+  // reset map colors
+  ['WA','NT','SA','Q','NSW','V','T'].forEach(r => {
+    document.getElementById('reg-'+r).style.fill = '#ddd';
+  });
+}
+
+function ac3Step(dir) {
+  ac3Cur = Math.max(-1, Math.min(ac3Steps.length-1, ac3Cur+dir));
+  if (ac3Cur < 0) { ac3Reset(); return; }
+  renderAC3(ac3Cur);
+  document.getElementById('ac3-prev').disabled = ac3Cur <= 0;
+  document.getElementById('ac3-next').disabled = ac3Cur >= ac3Steps.length-1;
+  document.getElementById('ac3-count').textContent = (ac3Cur+1)+' / '+ac3Steps.length;
+}
+
+function renderAC3(idx) {
+  if (idx < 0) return;
+  const step = ac3Steps[idx];
+  document.getElementById('ac3-log').textContent = step.log;
+
+  // Domains
+  const domEl = document.getElementById('ac3-domains');
+  const vars = ['WA','NT','SA','Q','NSW','V','T'];
+  domEl.innerHTML = vars.map(v => {
+    const d = step.domains[v];
+    const isActive = step.active === v;
+    const isAssigned = step.assigned && step.assigned[v];
+    return `<div class="domain-box ${isActive?'active-node':''} ${isAssigned?'solved':''}">
+      <div class="domain-label">${v}</div>
+      <div class="domain-values">
+        ${COLORS.map(c => `<span class="domain-val ${d.includes(c)?'':'removed'} ${isAssigned&&step.assigned[v]===c?'assigned':''}">${c}</span>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+
+  // Queue
+  const qEl = document.getElementById('ac3-queue');
+  if (step.queue.length === 0) {
+    qEl.innerHTML = '<span style="font-family:var(--mono);font-size:0.75rem;color:var(--muted);">queue empty</span>';
+  } else {
+    qEl.innerHTML = step.queue.map((a,i) => `<span class="q-item ${i===0?'processing':''}">${a}</span>`).join('');
+  }
+
+  // Map colors
+  if (step.assigned) {
+    Object.entries(step.assigned).forEach(([r,c]) => {
+      document.getElementById('reg-'+r).style.fill = MAP_COLORS[c];
+    });
+  }
+}
+
+// ===== MRV DEMO =====
+function renderMRV() {
+  const el = document.getElementById('mrv-demo');
+  const vars = [
+    {name:'WA', domain:['R'], assigned:true, color:'#c0392b'},
+    {name:'NT', domain:['G','B'], assigned:false},
+    {name:'SA', domain:['B'], assigned:false, mrv:true},
+    {name:'Q', domain:['R','G','B'], assigned:false},
+    {name:'NSW', domain:['R','G'], assigned:false},
+  ];
+  el.innerHTML = vars.map(v => `
+    <div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+      <span style="font-family:var(--mono);font-size:0.78rem;color:var(--csp-blue);font-weight:500;min-width:40px;">${v.name}</span>
+      <div style="display:flex;gap:4px;">${
+        v.domain.map(c=>`<span style="font-family:var(--mono);font-size:0.75rem;padding:2px 8px;border:1px solid var(--border);border-radius:2px;background:var(--surface2);${v.assigned?'opacity:0.5;':''}">${c}</span>`).join('')
+      }</div>
+      ${v.mrv?`<span style="font-family:var(--mono);font-size:0.65rem;color:var(--csp-red);border:1px solid var(--csp-red);padding:2px 6px;border-radius:2px;background:rgba(192,57,43,0.08);">← MRV PICKS THIS</span>`:''}
+      ${v.assigned?`<span style="font-family:var(--mono);font-size:0.65rem;color:var(--csp-green);">assigned</span>`:''}
+    </div>
+  `).join('');
+}
+
+// ===== BACKTRACKING TREE =====
+const btSteps = [
+  { log: 'Start: assign first variable WA. Try WA=R first.', nodes: {0:'visited',1:'current'}, edges: {1:true}, prune: [] },
+  { log: 'WA=R assigned. Try NT: values {G,B} remain (R eliminated by WA=R constraint). Try NT=G.', nodes: {0:'visited',1:'visited',4:'current'}, edges: {1:true,4:true}, prune: [] },
+  { log: 'WA=R, NT=G. SA must ≠ WA and ≠ NT → SA must ≠ R and ≠ G → SA={B}. SA=B is forced — assign it. Partial solution found!', nodes: {0:'visited',1:'visited',4:'visited',10:'solution'}, edges: {1:true,4:true,10:true}, prune: [] },
+  { log: 'Continuing from WA=R, NT=B branch. SA must ≠ R and ≠ B → SA={G}. Assign SA=G.', nodes: {0:'visited',1:'visited',4:'visited',10:'solution',5:'current',12:'solution'}, edges: {1:true,5:true,12:true}, prune: [] },
+  { log: 'Now explore WA=G branch. NT must ≠ G. Assign NT=R.', nodes: {0:'visited',1:'visited',4:'visited',10:'solution',5:'visited',12:'solution',2:'current',6:'current'}, edges: {2:true,6:true}, prune: [] },
+  { log: 'WA=G, NT=R. SA must ≠ G and ≠ R → SA={B}. Assignment continues...', nodes: {0:'visited',1:'visited',4:'visited',10:'solution',5:'visited',12:'solution',2:'visited',6:'visited',11:'solution'}, edges: {2:true,6:true,11:true}, prune: [] },
+  { log: 'WA=B branch: NT=R valid. SA must ≠ B and ≠ R → SA={G}. All paths lead to valid solutions with 3 colors.', nodes: {0:'visited',1:'visited',4:'visited',10:'solution',5:'visited',12:'solution',2:'visited',6:'visited',11:'solution',3:'visited',8:'visited',13:'solution'}, edges: {3:true,8:true,13:true}, prune: [] },
+  { log: '✓ Multiple valid colorings found. In practice we stop at first solution. Backtracking explored only a small fraction of the full search space thanks to constraint checking at each step.', nodes: {0:'visited',1:'visited',4:'visited',10:'solution',5:'visited',12:'solution',2:'visited',6:'visited',11:'solution',3:'visited',8:'visited',13:'solution',7:'pruned',9:'pruned'}, edges: {3:true,8:true,13:true}, prune: [] }
+];
+
+let btCur = -1;
+
+function btReset() {
+  btCur = -1;
+  for (let i = 0; i <= 13; i++) {
+    const el = document.getElementById('bt-n'+i);
+    if (el) el.className = 't-node';
+  }
+  for (let i = 1; i <= 13; i++) {
+    const el = document.getElementById('bt-e'+i);
+    if (el) el.className = 't-edge';
+  }
+  document.getElementById('bt-log').textContent = 'Press NEXT to step through backtracking. Watch how conflicts are detected and the algorithm backtracks to try other values.';
+  document.getElementById('bt-count').textContent = '0 / '+btSteps.length;
+  document.getElementById('bt-prev').disabled = true;
+  document.getElementById('bt-next').disabled = false;
+}
+
+function btStep(dir) {
+  btCur = Math.max(-1, Math.min(btSteps.length-1, btCur+dir));
+  if (btCur < 0) { btReset(); return; }
+  const step = btSteps[btCur];
+  // Reset all
+  for (let i = 0; i <= 13; i++) {
+    const el = document.getElementById('bt-n'+i);
+    if (el) el.className = 't-node';
+  }
+  // Apply
+  Object.entries(step.nodes).forEach(([id, cls]) => {
+    const el = document.getElementById('bt-n'+id);
+    if (el) el.className = 't-node ' + cls;
+  });
+  Object.entries(step.edges).forEach(([id, active]) => {
+    const el = document.getElementById('bt-e'+id);
+    if (el && active) el.className = 't-edge active';
+  });
+  step.prune.forEach(id => {
+    const el = document.getElementById('bt-e'+id);
+    if (el) el.className = 't-edge pruned';
+  });
+  document.getElementById('bt-log').textContent = step.log;
+  document.getElementById('bt-count').textContent = (btCur+1)+' / '+btSteps.length;
+  document.getElementById('bt-prev').disabled = btCur <= 0;
+  document.getElementById('bt-next').disabled = btCur >= btSteps.length-1;
+}
+
+// Init
+ac3Reset();
+renderMRV();
+btReset();
+</script>
+</body>
+</html>
