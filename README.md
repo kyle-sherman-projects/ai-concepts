@@ -11,15 +11,22 @@ Based on Russell & Norvig's *Artificial Intelligence: A Modern Approach* (4th Ed
 ```
 /
 ├── Chapters 1–3
-│   ├── index.html                              — Interactive concept explorer
-│   ├── learning_agent_diagram.html             — Learning agent architecture diagram
-│   ├── lifo_fifo_search.html                   — DFS vs BFS / LIFO vs FIFO visualizer
-│   ├── AI_Concepts_Visual_Organizers.pptx      — 10-slide presentation
+│   ├── index.html                               — Interactive concept explorer
+│   ├── learning_agent_diagram.html              — Learning agent architecture diagram
+│   ├── lifo_fifo_search.html                    — DFS vs BFS / LIFO vs FIFO visualizer
+│   ├── AI_Concepts_Visual_Organizers.pptx       — 10-slide presentation
 │   └── AI_Modern_Approach_Ch1-3_Annotations.md — Study annotations & key terms
 │
+├── Chapters 4–5
+│   ├── chapter4_visual_guide.html               — Local search, optimization & partial observability
+│   └── ch5_adversarial_search.html              — Minimax, alpha–beta, MCTS & stochastic games
+│
+├── Chapter 6
+│   └── ch6_csp.html                             — Constraint satisfaction: AC-3, backtracking & graph structure
+│
 ├── Homework
-│   ├── maze_a-star_explained.ipynb             — HW 3.1: BFS vs UCS on a weighted graph
-│   └── maze_bfs_explained.ipynb                — HW 3.2: A* search on a 10×10 grid
+│   ├── maze_a-star_explained.ipynb              — HW 3.1: BFS vs UCS on a weighted graph
+│   └── maze_bfs_explained.ipynb                 — HW 3.2: A* search on a 10×10 grid
 │
 └── (more chapters added as course progresses)
 ```
@@ -37,6 +44,7 @@ Based on Russell & Norvig's *Artificial Intelligence: A Modern Approach* (4th Ed
 | `lifo_fifo_search.html` | Interactive | Step-by-step visualizer showing how LIFO stacks produce DFS and FIFO queues produce BFS — includes animated frontier tracking and step log |
 | `AI_Concepts_Visual_Organizers.pptx` | Slides | 10 professionally designed slides covering agent architecture, search strategies, A*, environment properties, and bounded rationality |
 | `AI_Modern_Approach_Ch1-3_Annotations.md` | Reference | 100+ key terms with definitions, historical context, real-world examples, and reflection space — organized by chapter |
+| `ch6_csp.html` | Interactive | CSP formal definition (X, D, C), constraint types (unary/binary/ternary/global), Alldiff rationale, domain types, scheduling constraint formulas, the constraint propagation vs. search distinction |
 
 ---
 
@@ -71,7 +79,8 @@ Annotated Jupyter notebooks explaining the reasoning behind each implementation,
 | Week | Chapter(s) | Topic | Status |
 |------|-----------|-------|--------|
 | 1–3 | Ch. 1–3 | Introduction, Agents, Search | ✅ Complete |
-| 4 | Ch. 4–5 | Informed Search, Game Playing | 🔲 Planned |
+| 4 | Ch. 4–5 | Informed Search, Game Playing | ✅ Complete |
+| * | Ch. 6 | Constraint Satisfaction Problems | ✅ Complete |
 | 5 | Ch. 7–8 | Logical Agents, First-Order Logic | 🔲 Planned |
 | 6 | Ch. 9–10 | Inference, Knowledge Representation | 🔲 Planned |
 | 7 | Ch. 12–13 | Probabilistic Reasoning | 🔲 Planned |
@@ -91,17 +100,6 @@ Annotated Jupyter notebooks explaining the reasoning behind each implementation,
 - **Instructor**: Dr. Kewei "Isaac" Li
 - **Term**: Spring 2026
 - **Textbook**: Russell & Norvig, *AI: A Modern Approach*, 4th Edition
-
----
-
-## 🛠️ Adding New Materials
-
-To add content for a new chapter:
-
-1. Create new HTML/markdown/notebook files locally
-2. Commit and push to this repository
-3. Update the roadmap table above (🔲 → ✅)
-4. GitHub Pages reflects changes within 1–2 minutes
 
 ---
 
