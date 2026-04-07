@@ -24,10 +24,14 @@ Based on Russell & Norvig's *Artificial Intelligence: A Modern Approach* (4th Ed
 ├── Chapter 6
 │   └── ch6_csp.html                             — Constraint satisfaction: AC-3, backtracking & graph structure
 │
-├── Homework
-│   ├── maze_a-star_explained.ipynb              — HW 3.1: BFS vs UCS on a weighted graph
-│   └── maze_bfs_explained.ipynb                 — HW 3.2: A* search on a 10×10 grid
-│
+├── homework/
+│   ├── bfs_maze.py
+│   ├── dfs_maze.py
+│   ├── maze_a-star_explained.ipynb
+│   ├── maze_bfs_explained.ipynb
+│   └── maze_bfs_vs_ucs_explained.ipynb
+│   └── probability_problems_hw.html
+
 └── (more chapters added as course progresses)
 ```
 
