@@ -24,6 +24,9 @@ Based on Russell & Norvig's *Artificial Intelligence: A Modern Approach* (4th Ed
 ├── Chapter 6
 │   └── ch6_csp.html                             — Constraint satisfaction: AC-3, backtracking & graph structure
 │
+├── Chapter 7
+│   └── ch7_logical_agents.html                  — Logical agents, propositional logic, inference & SATPLAN
+│
 ├── homework/
 │   ├── bfs_maze.py
 │   ├── dfs_maze.py
@@ -58,6 +61,11 @@ Based on Russell & Norvig's *Artificial Intelligence: A Modern Approach* (4th Ed
 | File | Type | Description |
 |------|------|-------------|
 | `ch6_csp.html` | Interactive | CSP formal definition, constraint types, AC-3 with animated Australia map coloring, backtracking with conflict-directed backjumping, MRV/LCV heuristics, and graph structure decomposition |
+
+### Chapter 7 — Logical Agents & Propositional Logic
+| File | Type | Description |
+|------|------|-------------|
+| `ch7_logical_agents.html` | Interactive | Knowledge-based agents, Wumpus World step-through, propositional syntax & semantics, interactive truth table, CNF conversion walkthrough, resolution refutation demo, DPLL & WalkSAT, forward/backward chaining, and SATPLAN — includes 10-question self-quiz |
 
 ---
 
@@ -94,7 +102,7 @@ Annotated Jupyter notebooks explaining the reasoning behind each implementation,
 | 1–3 | Ch. 1–3 | Introduction, Agents, Search | ✅ Complete |
 | 4 | Ch. 4–5 | Informed Search, Game Playing | ✅ Complete |
 | * | Ch. 6 | Constraint Satisfaction Problems | ✅ Complete |
-| 5 | Ch. 7–8 | Logical Agents, First-Order Logic | 🔲 Planned |
+| 5 | Ch. 7–8 | Logical Agents, First-Order Logic | ✅ Complete |
 | 6 | Ch. 9–10 | Inference, Knowledge Representation | 🔲 Planned |
 | 7 | Ch. 12–13 | Probabilistic Reasoning | 🔲 Planned |
 | 8 | Ch. 13–14 | Bayesian Networks, MDPs | 🔲 Planned |
