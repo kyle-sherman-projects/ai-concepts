@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 8 – First-Order Logic | AIMA Study Guide</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #0e1117;
+            --surface: #161b27;
+            --surface2: #1e2638;
+            --border: #2a3450;
+            --accent: #4fc3f7;
+            --accent2: #b39ddb;
+            --accent3: #80cbc4;
+            --accent4: #ffb74d;
+            --text: #e2e8f0;
+            --muted: #8899aa;
+            --correct: #66bb6a;
+            --wrong: #ef5350;
+        }
+
+        body {
+            font-family: 'Georgia', serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 24px 16px;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 36px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        header .chapter-label {
+            font-family: 'Courier New', monospace;
+            font-size: 0.75rem;
+            letter-spacing: 0.2em;
+            color: var(--accent);
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        header h1 {
+            font-size: 2.2rem;
+            font-weight: normal;
+            color: #fff;
+            letter-spacing: -0.5px;
+            margin-bottom: 6px;
+        }
+
+        header p {
+            color: var(--muted);
+            font-size: 0.95rem;
+            font-style: italic;
+        }
+
+        /* TABS */
+        .tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 28px;
+            flex-wrap: wrap;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            background: transparent;
+            border: none;
+            color: var(--muted);
+            cursor: pointer;
+            font-size: 0.88rem;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 0.05em;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -1px;
+            transition: all 0.2s;
+        }
+
+        .tab:hover { color: var(--text); }
+        .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+        .panel { display: none; }
+        .panel.active { display: block; }
+
+        /* CARDS */
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+
+        .card h2 {
+            font-size: 1.1rem;
+            color: var(--accent);
+            font-family: 'Courier New', monospace;
+            margin-bottom: 14px;
+            letter-spacing: 0.04em;
+        }
+
+        .card h3 {
+            font-size: 0.95rem;
+            color: var(--accent2);
+            margin: 16px 0 8px;
+        }
+
+        .card p, .card li {
+            font-size: 0.92rem;
+            line-height: 1.7;
+            color: #c8d6e5;
+        }
+
+        .card ul, .card ol { padding-left: 20px; }
+        .card li { margin-bottom: 6px; }
+
+        /* SYNTAX BOX */
+        .syntax-box {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-left: 3px solid var(--accent3);
+            border-radius: 4px;
+            padding: 14px 18px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            line-height: 1.8;
+            color: #e0f2f1;
+            margin: 12px 0;
+            overflow-x: auto;
+        }
+
+        .syntax-box .comment { color: var(--muted); font-style: italic; }
+        .syntax-box .kw { color: var(--accent); }
+        .syntax-box .pred { color: var(--accent3); }
+        .syntax-box .const { color: var(--accent4); }
+        .syntax-box .var { color: var(--accent2); }
+
+        /* TWO-COLUMN */
+        .grid2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        @media (max-width: 680px) { .grid2 { grid-template-columns: 1fr; } }
+
+        .mini-card {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 16px;
+        }
+
+        .mini-card h4 {
+            font-size: 0.85rem;
+            color: var(--accent4);
+            font-family: 'Courier New', monospace;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        .mini-card p, .mini-card li {
+            font-size: 0.88rem;
+            color: #b0c4d8;
+            line-height: 1.6;
+        }
+
+        /* TABLE */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.88rem;
+            margin-top: 12px;
+        }
+
+        th {
+            background: var(--surface2);
+            color: var(--accent);
+            font-family: 'Courier New', monospace;
+            font-weight: normal;
+            padding: 10px 14px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+            letter-spacing: 0.06em;
+        }
+
+        td {
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--border);
+            color: #c8d6e5;
+            vertical-align: top;
+        }
+
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: rgba(79,195,247,0.04); }
+
+        /* BADGE */
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.78rem;
+            margin: 2px 2px;
+        }
+        .badge-blue   { background: rgba(79,195,247,0.15); color: var(--accent);  border: 1px solid rgba(79,195,247,0.3); }
+        .badge-purple { background: rgba(179,157,219,0.15); color: var(--accent2); border: 1px solid rgba(179,157,219,0.3); }
+        .badge-teal   { background: rgba(128,203,196,0.15); color: var(--accent3); border: 1px solid rgba(128,203,196,0.3); }
+        .badge-orange { background: rgba(255,183,77,0.15);  color: var(--accent4); border: 1px solid rgba(255,183,77,0.3); }
+
+        /* WALKTHROUGH */
+        .step-nav {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+        }
+
+        .step-btn {
+            padding: 8px 16px;
+            border-radius: 5px;
+            border: 1px solid var(--border);
+            background: var(--surface2);
+            color: var(--muted);
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-size: 0.82rem;
+            transition: all 0.2s;
+        }
+
+        .step-btn:hover { color: var(--text); border-color: var(--accent); }
+        .step-btn.active { background: rgba(79,195,247,0.1); color: var(--accent); border-color: var(--accent); }
+
+        .step-content {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 20px;
+        }
+
+        .step-content h3 {
+            color: var(--accent3);
+            font-size: 1rem;
+            margin-bottom: 10px;
+        }
+
+        .step-content p, .step-content li {
+            font-size: 0.9rem;
+            line-height: 1.7;
+            color: #c8d6e5;
+        }
+
+        .step-content ul { padding-left: 18px; }
+
+        /* QUIZ */
+        .quiz-q {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+
+        .quiz-q .q-text {
+            font-size: 0.95rem;
+            color: var(--text);
+            margin-bottom: 14px;
+            line-height: 1.6;
+        }
+
+        .quiz-q .q-text code {
+            background: var(--bg);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            color: var(--accent3);
+            font-size: 0.88em;
+        }
+
+        .options { display: flex; flex-direction: column; gap: 8px; }
+
+        .opt-btn {
+            padding: 10px 16px;
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            background: var(--surface);
+            color: #c8d6e5;
+            cursor: pointer;
+            font-size: 0.88rem;
+            text-align: left;
+            transition: all 0.2s;
+            font-family: 'Georgia', serif;
+        }
+
+        .opt-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--text); }
+        .opt-btn.correct { background: rgba(102,187,106,0.15); border-color: var(--correct); color: var(--correct); }
+        .opt-btn.wrong   { background: rgba(239,83,80,0.15);   border-color: var(--wrong);   color: var(--wrong);   }
+        .opt-btn:disabled { cursor: default; }
+
+        .feedback {
+            margin-top: 12px;
+            padding: 10px 14px;
+            border-radius: 4px;
+            font-size: 0.88rem;
+            line-height: 1.5;
+            display: none;
+        }
+        .feedback.show { display: block; }
+        .feedback.correct { background: rgba(102,187,106,0.1); border: 1px solid rgba(102,187,106,0.3); color: #a5d6a7; }
+        .feedback.wrong   { background: rgba(239,83,80,0.1);   border: 1px solid rgba(239,83,80,0.3);   color: #ef9a9a; }
+
+        .quiz-score {
+            text-align: center;
+            padding: 16px;
+            font-family: 'Courier New', monospace;
+            color: var(--muted);
+            font-size: 0.9rem;
+            margin-top: 10px;
+        }
+
+        .reset-btn {
+            display: block;
+            margin: 16px auto 0;
+            padding: 10px 28px;
+            background: transparent;
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .reset-btn:hover { background: rgba(79,195,247,0.1); }
+
+        /* WUMPUS DEMO */
+        .wumpus-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 72px);
+            grid-template-rows: repeat(4, 72px);
+            gap: 3px;
+            margin: 16px 0;
+        }
+
+        .w-cell {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            cursor: pointer;
+            position: relative;
+            transition: background 0.2s;
+        }
+
+        .w-cell:hover { background: rgba(79,195,247,0.08); }
+        .w-cell.revealed { border-color: var(--accent3); }
+        .w-cell .cell-label {
+            position: absolute;
+            top: 2px;
+            left: 4px;
+            font-size: 0.6rem;
+            font-family: 'Courier New', monospace;
+            color: var(--muted);
+        }
+
+        .fol-output {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-left: 3px solid var(--accent2);
+            border-radius: 4px;
+            padding: 14px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.82rem;
+            color: #d1c4e9;
+            min-height: 100px;
+            white-space: pre-wrap;
+            line-height: 1.8;
+        }
+
+        .wumpus-row { display: flex; align-items: flex-start; gap: 20px; flex-wrap: wrap; }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <header>
+        <div class="chapter-label">AIMA · Chapter 8</div>
+        <h1>First-Order Logic</h1>
+        <p>Russell &amp; Norvig — <em>Artificial Intelligence: A Modern Approach</em>, 4th ed.</p>
+    </header>
+
+    <div class="tabs">
+        <button class="tab active" onclick="showPanel('overview',this)">Overview</button>
+        <button class="tab" onclick="showPanel('syntax',this)">Syntax &amp; Semantics</button>
+        <button class="tab" onclick="showPanel('quantifiers',this)">Quantifiers</button>
+        <button class="tab" onclick="showPanel('wumpus',this)">Wumpus World</button>
+        <button class="tab" onclick="showPanel('kb',this)">Building a KB</button>
+        <button class="tab" onclick="showPanel('quiz',this)">Quiz</button>
+    </div>
+
+    <!-- ═══════════════════════ OVERVIEW ═══════════════════════ -->
+    <div id="overview" class="panel active">
+
+        <div class="card">
+            <h2>// Why First-Order Logic?</h2>
+            <p>Propositional logic can only represent facts — it has no concept of <em>objects</em>, <em>properties</em>, or <em>relationships</em>. First-order logic (FOL) extends it with a richer ontology, enabling statements like "Every student who studies passes" rather than a separate proposition for every student.</p>
+        </div>
+
+        <div class="grid2">
+            <div class="mini-card">
+                <h4>Propositional Logic</h4>
+                <ul>
+                    <li>Ontology: facts only</li>
+                    <li>No objects, no relations</li>
+                    <li>One proposition per ground truth</li>
+                    <li>E.g. <code style="font-family:monospace;font-size:0.85em;color:#80cbc4">WumpusAlive, Stench12</code></li>
+                    <li>Scales poorly with domain size</li>
+                </ul>
+            </div>
+            <div class="mini-card">
+                <h4>First-Order Logic</h4>
+                <ul>
+                    <li>Ontology: objects, relations, functions</li>
+                    <li>Variables quantified over domains</li>
+                    <li>One rule covers infinite cases</li>
+                    <li>E.g. <code style="font-family:monospace;font-size:0.85em;color:#80cbc4">∀x Wumpus(x) ⇒ Smelly(x)</code></li>
+                    <li>Semi-decidable but expressive</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card" style="margin-top:20px">
+            <h2>// Five Properties of Good KR Languages</h2>
+            <table>
+                <thead><tr><th>Property</th><th>Meaning</th><th>FOL?</th></tr></thead>
+                <tbody>
+                    <tr><td><span class="badge badge-blue">Declarative</span></td><td>Encodes knowledge, not how to use it</td><td>✅ Yes</td></tr>
+                    <tr><td><span class="badge badge-teal">Compositional</span></td><td>Meaning of complex exprs built from parts</td><td>✅ Yes</td></tr>
+                    <tr><td><span class="badge badge-purple">Expressive</span></td><td>Can represent wide variety of knowledge</td><td>✅ Strong</td></tr>
+                    <tr><td><span class="badge badge-orange">Context-independent</span></td><td>Meaning fixed regardless of where used</td><td>✅ Yes</td></tr>
+                    <tr><td><span class="badge badge-blue">Unambiguous</span></td><td>Precisely one interpretation</td><td>✅ Yes (vagueness excepted)</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card">
+            <h2>// Ontological vs. Epistemological Commitments</h2>
+            <p style="margin-bottom:12px">Different logics make different assumptions about the world and about what agents can know:</p>
+            <table>
+                <thead><tr><th>Logic</th><th>Ontological commitment</th><th>Epistemological commitment</th></tr></thead>
+                <tbody>
+                    <tr><td>Propositional</td><td>Facts</td><td>True / False / Unknown</td></tr>
+                    <tr><td>First-order</td><td>Objects, relations, functions</td><td>True / False / Unknown</td></tr>
+                    <tr><td>Temporal</td><td>Facts, times</td><td>True / False / Unknown</td></tr>
+                    <tr><td>Probability theory</td><td>Facts</td><td>Degree of belief [0,1]</td></tr>
+                    <tr><td>Fuzzy logic</td><td>Facts with degree of truth</td><td>Known degree of truth</td></tr>
+                </tbody>
+            </table>
+            <p style="margin-top:12px;font-size:0.88rem;color:var(--muted)">⚠ Both propositional and first-order logic struggle with <em>vague</em> propositions ("tall", "spicy") — a key limitation for domains like politics or cuisine.</p>
+        </div>
+
+    </div>
+
+    <!-- ═══════════════════════ SYNTAX ═══════════════════════ -->
+    <div id="syntax" class="panel">
+
+        <div class="card">
+            <h2>// Syntax Elements</h2>
+            <p>FOL syntax builds on propositional logic by adding <strong>terms</strong> (to represent objects) and <strong>quantifiers</strong> (to make general statements). Every well-formed formula (sentence) is either atomic or built from atomic sentences using connectives and quantifiers.</p>
+        </div>
+
+        <div class="grid2">
+            <div class="card">
+                <h2>// Terms</h2>
+                <p>A term denotes an object in the domain. There are three kinds:</p>
+                <ul style="margin-top:10px">
+                    <li><span class="badge badge-orange">Constant</span> — names a specific object: <code style="font-family:monospace;color:#ffb74d">John, 2, LHR</code></li>
+                    <li><span class="badge badge-purple">Variable</span> — ranges over objects: <code style="font-family:monospace;color:#b39ddb">x, y, s</code></li>
+                    <li><span class="badge badge-teal">Function</span> — maps objects to an object: <code style="font-family:monospace;color:#80cbc4">LeftLeg(John)</code></li>
+                </ul>
+                <div class="syntax-box">
+<span class="comment">-- Terms</span>
+<span class="const">Richard</span>            <span class="comment">-- constant</span>
+<span class="var">x</span>                   <span class="comment">-- variable</span>
+<span class="pred">Father</span>(<span class="const">John</span>)       <span class="comment">-- function applied to constant</span>
+<span class="pred">LeftLeg</span>(<span class="var">x</span>)         <span class="comment">-- function applied to variable</span>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>// Atomic Sentences</h2>
+                <p>An <strong>atomic sentence</strong> asserts that a relation (predicate) holds between one or more terms. It is the simplest sentence that can be true or false.</p>
+                <div class="syntax-box">
+<span class="comment">-- Predicate(term, term, ...)</span>
+<span class="pred">Brother</span>(<span class="const">Richard</span>, <span class="const">John</span>)
+<span class="pred">Married</span>(<span class="pred">Father</span>(<span class="const">Richard</span>), <span class="pred">Mother</span>(<span class="const">John</span>))
+<span class="pred">OnTable</span>(<span class="var">x</span>)
+<span class="var">x</span> = <span class="var">y</span>                 <span class="comment">-- equality is built-in</span>
+                </div>
+                <p style="margin-top:10px;font-size:0.88rem">An atomic sentence is <strong>true</strong> when the named relation holds between the named objects in the model.</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>// Complex Sentences (Connectives)</h2>
+            <p>The same connectives from propositional logic apply:</p>
+            <div class="syntax-box">
+<span class="kw">¬</span>  <span class="pred">Wumpus</span>(<span class="var">x</span>)                              <span class="comment">-- negation</span>
+<span class="pred">Rich</span>(<span class="var">x</span>) <span class="kw">∧</span> <span class="pred">Famous</span>(<span class="var">x</span>)                    <span class="comment">-- conjunction</span>
+<span class="pred">Killed</span>(<span class="const">John</span>, <span class="const">Wumpus</span>) <span class="kw">∨</span> <span class="pred">Alive</span>(<span class="const">Wumpus</span>)   <span class="comment">-- disjunction</span>
+<span class="pred">Stench</span>(<span class="var">s</span>) <span class="kw">⇒</span> <span class="pred">Adjacent</span>(<span class="var">s</span>, <span class="pred">Home</span>(<span class="const">Wumpus</span>)) <span class="comment">-- implication</span>
+<span class="pred">Sibling</span>(<span class="const">A</span>, <span class="const">B</span>) <span class="kw">⟺</span> <span class="pred">Sibling</span>(<span class="const">B</span>, <span class="const">A</span>)         <span class="comment">-- biconditional</span>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>// Models in FOL</h2>
+            <p>A <strong>model</strong> (possible world) for FOL consists of:</p>
+            <ul style="margin-top:10px">
+                <li>A non-empty set of objects — the <strong>domain</strong> D</li>
+                <li>An <strong>interpretation</strong> mapping:
+                    <ul>
+                        <li>Each <em>constant</em> → an object in D</li>
+                        <li>Each <em>predicate</em> → a relation (subset of D<sup>n</sup>)</li>
+                        <li>Each <em>function</em> → a function D<sup>n</sup> → D</li>
+                    </ul>
+                </li>
+            </ul>
+            <p style="margin-top:10px;font-size:0.88rem;color:var(--muted)">Unlike propositional logic, there are infinitely many possible FOL models even for small domains, because the mapping from symbols to domain objects can vary freely.</p>
+        </div>
+
+    </div>
+
+    <!-- ═══════════════════════ QUANTIFIERS ═══════════════════════ -->
+    <div id="quantifiers" class="panel">
+
+        <div class="card">
+            <h2>// Universal Quantifier  ∀</h2>
+            <p>"For all …" — asserts the sentence holds for <em>every</em> object in the domain.</p>
+            <div class="syntax-box">
+<span class="kw">∀</span><span class="var">x</span> <span class="pred">King</span>(<span class="var">x</span>) <span class="kw">⇒</span> <span class="pred">Person</span>(<span class="var">x</span>)
+<span class="comment">-- "Every king is a person."</span>
+
+<span class="kw">∀</span><span class="var">x</span> <span class="pred">Crown</span>(<span class="var">x</span>) <span class="kw">⇒</span> <span class="pred">OnHead</span>(<span class="var">x</span>, <span class="pred">KingOf</span>(<span class="pred">Country</span>(<span class="var">x</span>)))
+<span class="comment">-- "Every crown is on the head of the king of its country."</span>
+            </div>
+            <h3>Common Pitfall</h3>
+            <p>∀ is almost always paired with <strong>⇒</strong>, not ∧. Why?</p>
+            <div class="syntax-box">
+<span class="comment">-- WRONG: ∀x King(x) ∧ Person(x)</span>
+<span class="comment">-- This claims everything in the domain is BOTH a king AND a person.</span>
+
+<span class="comment">-- CORRECT: ∀x King(x) ⇒ Person(x)</span>
+<span class="comment">-- "If something is a king, then it is a person."</span>
+<span class="comment">-- True even if there are no kings (vacuously true).</span>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>// Existential Quantifier  ∃</h2>
+            <p>"There exists …" — asserts the sentence holds for <em>at least one</em> object in the domain.</p>
+            <div class="syntax-box">
+<span class="kw">∃</span><span class="var">x</span> <span class="pred">Crown</span>(<span class="var">x</span>) <span class="kw">∧</span> <span class="pred">OnHead</span>(<span class="var">x</span>, <span class="const">John</span>)
+<span class="comment">-- "There is a crown on John's head."</span>
+
+<span class="kw">∃</span><span class="var">x</span> <span class="pred">Person</span>(<span class="var">x</span>) <span class="kw">∧</span> <span class="pred">Loves</span>(<span class="var">x</span>, <span class="const">Mary</span>)
+<span class="comment">-- "Someone loves Mary."</span>
+            </div>
+            <h3>Common Pitfall</h3>
+            <p>∃ is almost always paired with <strong>∧</strong>, not ⇒. Why?</p>
+            <div class="syntax-box">
+<span class="comment">-- WRONG: ∃x Crown(x) ⇒ OnHead(x, John)</span>
+<span class="comment">-- True even if no crowns exist (implication is vacuously true)!</span>
+
+<span class="comment">-- CORRECT: ∃x Crown(x) ∧ OnHead(x, John)</span>
+<span class="comment">-- Requires at least one crown that is actually on John's head.</span>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>// De Morgan's Laws for Quantifiers</h2>
+            <p>The quantifiers are duals — each can be expressed in terms of the other via negation:</p>
+            <div class="syntax-box">
+<span class="kw">∀</span><span class="var">x</span> P(<span class="var">x</span>)   ≡   <span class="kw">¬∃</span><span class="var">x</span> <span class="kw">¬</span>P(<span class="var">x</span>)
+<span class="kw">∃</span><span class="var">x</span> P(<span class="var">x</span>)   ≡   <span class="kw">¬∀</span><span class="var">x</span> <span class="kw">¬</span>P(<span class="var">x</span>)
+<span class="kw">¬∀</span><span class="var">x</span> P(<span class="var">x</span>)  ≡   <span class="kw">∃</span><span class="var">x</span> <span class="kw">¬</span>P(<span class="var">x</span>)
+<span class="kw">¬∃</span><span class="var">x</span> P(<span class="var">x</span>)  ≡   <span class="kw">∀</span><span class="var">x</span> <span class="kw">¬</span>P(<span class="var">x</span>)
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>// Nested Quantifiers &amp; Scope</h2>
+            <p>Order matters when mixing quantifiers. Variables are bound by the innermost matching quantifier.</p>
+            <div class="syntax-box">
+<span class="kw">∀</span><span class="var">x</span> <span class="kw">∃</span><span class="var">y</span> <span class="pred">Loves</span>(<span class="var">x</span>, <span class="var">y</span>)
+<span class="comment">-- "Everyone loves someone." (y can differ per x)</span>
+
+<span class="kw">∃</span><span class="var">y</span> <span class="kw">∀</span><span class="var">x</span> <span class="pred">Loves</span>(<span class="var">x</span>, <span class="var">y</span>)
+<span class="comment">-- "There is someone loved by everyone." (same y for all x)</span>
+<span class="comment">-- These are NOT equivalent!</span>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>// Equality</h2>
+            <p>FOL includes a built-in predicate <strong>=</strong> for object identity, allowing unique existence assertions:</p>
+            <div class="syntax-box">
+<span class="comment">-- At least two crowns exist:</span>
+<span class="kw">∃</span><span class="var">x</span> <span class="kw">∃</span><span class="var">y</span> <span class="pred">Crown</span>(<span class="var">x</span>) <span class="kw">∧</span> <span class="pred">Crown</span>(<span class="var">y</span>) <span class="kw">∧</span> <span class="var">x</span> <span class="kw">≠</span> <span class="var">y</span>
+
+<span class="comment">-- Exactly one king:</span>
+<span class="kw">∃</span><span class="var">x</span> <span class="pred">King</span>(<span class="var">x</span>) <span class="kw">∧</span> <span class="kw">∀</span><span class="var">y</span> <span class="pred">King</span>(<span class="var">y</span>) <span class="kw">⇒</span> <span class="var">y</span> = <span class="var">x</span>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ═══════════════════════ WUMPUS ═══════════════════════ -->
+    <div id="wumpus" class="panel">
+
+        <div class="card">
+            <h2>// Wumpus World in FOL</h2>
+            <p>The Wumpus World is a classic testbed for knowledge-based agents. Below is a 4×4 grid. Click a revealed cell to see the FOL sentences an agent would assert after perceiving it. The agent starts at (1,1).</p>
+        </div>
+
+        <div class="card">
+            <div class="wumpus-row">
+                <div>
+                    <div class="wumpus-grid" id="wgrid"></div>
+                    <p style="font-size:0.78rem;color:var(--muted);margin-top:8px">Click a cell to inspect FOL assertions</p>
+                </div>
+                <div style="flex:1;min-width:260px">
+                    <div style="font-size:0.8rem;color:var(--muted);font-family:monospace;margin-bottom:8px">// FOL assertions for selected cell:</div>
+                    <div class="fol-output" id="fol-out">Select a cell to view its logical encoding…</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>// General FOL Axioms for the Wumpus World</h2>
+            <div class="syntax-box">
+<span class="comment">-- Breeze ↔ pit adjacent</span>
+<span class="kw">∀</span><span class="var">s</span> <span class="pred">Breezy</span>(<span class="var">s</span>) <span class="kw">⟺</span> <span class="kw">∃</span><span class="var">r</span> <span class="pred">Adjacent</span>(<span class="var">r</span>, <span class="var">s</span>) <span class="kw">∧</span> <span class="pred">Pit</span>(<span class="var">r</span>)
+
+<span class="comment">-- Stench ↔ wumpus adjacent</span>
+<span class="kw">∀</span><span class="var">s</span> <span class="pred">Smelly</span>(<span class="var">s</span>) <span class="kw">⟺</span> <span class="kw">∃</span><span class="var">r</span> <span class="pred">Adjacent</span>(<span class="var">r</span>, <span class="var">s</span>) <span class="kw">∧</span> <span class="pred">Wumpus</span>(<span class="var">r</span>)
+
+<span class="comment">-- Adjacency is symmetric</span>
+<span class="kw">∀</span><span class="var">x</span><span class="var">y</span> <span class="pred">Adjacent</span>(<span class="var">x</span>,<span class="var">y</span>) <span class="kw">⟺</span> <span class="pred">Adjacent</span>(<span class="var">y</span>,<span class="var">x</span>)
+
+<span class="comment">-- Safe if not pit and not wumpus</span>
+<span class="kw">∀</span><span class="var">s</span> <span class="pred">Safe</span>(<span class="var">s</span>) <span class="kw">⟺</span> <span class="kw">¬</span><span class="pred">Pit</span>(<span class="var">s</span>) <span class="kw">∧ ¬</span><span class="pred">Wumpus</span>(<span class="var">s</span>)
+
+<span class="comment">-- Exactly one wumpus</span>
+<span class="kw">∃</span><span class="var">w</span> <span class="pred">Wumpus</span>(<span class="var">w</span>) <span class="kw">∧</span> <span class="kw">∀</span><span class="var">y</span> <span class="pred">Wumpus</span>(<span class="var">y</span>) <span class="kw">⇒</span> <span class="var">y</span>=<span class="var">w</span>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ═══════════════════════ KB ═══════════════════════ -->
+    <div id="kb" class="panel">
+
+        <div class="card">
+            <h2>// Building a Knowledge Base in FOL</h2>
+            <p>Developing a KB is an engineering task requiring systematic analysis. Russell &amp; Norvig describe this as the <strong>knowledge engineering process</strong>.</p>
+        </div>
+
+        <div id="kb-steps">
+            <div class="step-nav">
+                <button class="step-btn active" onclick="showStep(0,this)">1. Identify Task</button>
+                <button class="step-btn" onclick="showStep(1,this)">2. Gather Domain Knowledge</button>
+                <button class="step-btn" onclick="showStep(2,this)">3. Choose Vocabulary</button>
+                <button class="step-btn" onclick="showStep(3,this)">4. Encode Axioms</button>
+                <button class="step-btn" onclick="showStep(4,this)">5. Encode Problem</button>
+                <button class="step-btn" onclick="showStep(5,this)">6. Pose Queries</button>
+            </div>
+            <div class="step-content" id="step-content"></div>
+        </div>
+
+        <div class="card" style="margin-top:20px">
+            <h2>// Example KB: Electronic Circuits</h2>
+            <p style="margin-bottom:12px">A worked example from the textbook — encoding a circuit domain in FOL:</p>
+            <div class="syntax-box">
+<span class="comment">-- Domain: terminals, gates, signals</span>
+<span class="kw">∀</span><span class="var">g</span> <span class="pred">Gate</span>(<span class="var">g</span>) <span class="kw">∧</span> <span class="pred">Type</span>(<span class="var">g</span>, AND) <span class="kw">⇒</span>
+    <span class="pred">Signal</span>(<span class="pred">Out</span>(<span class="const">1</span>,<span class="var">g</span>)) = <span class="const">1</span> <span class="kw">⟺</span>
+    <span class="pred">Signal</span>(<span class="pred">In</span>(<span class="const">1</span>,<span class="var">g</span>))=<span class="const">1</span> <span class="kw">∧</span> <span class="pred">Signal</span>(<span class="pred">In</span>(<span class="const">2</span>,<span class="var">g</span>))=<span class="const">1</span>
+
+<span class="kw">∀</span><span class="var">g</span> <span class="pred">Gate</span>(<span class="var">g</span>) <span class="kw">∧</span> <span class="pred">Type</span>(<span class="var">g</span>, OR) <span class="kw">⇒</span>
+    <span class="pred">Signal</span>(<span class="pred">Out</span>(<span class="const">1</span>,<span class="var">g</span>)) = <span class="const">1</span> <span class="kw">⟺</span>
+    <span class="pred">Signal</span>(<span class="pred">In</span>(<span class="const">1</span>,<span class="var">g</span>))=<span class="const">1</span> <span class="kw">∨</span> <span class="pred">Signal</span>(<span class="pred">In</span>(<span class="const">2</span>,<span class="var">g</span>))=<span class="const">1</span>
+
+<span class="kw">∀</span><span class="var">g</span> <span class="pred">Gate</span>(<span class="var">g</span>) <span class="kw">∧</span> <span class="pred">Type</span>(<span class="var">g</span>, NOT) <span class="kw">⇒</span>
+    <span class="pred">Signal</span>(<span class="pred">Out</span>(<span class="const">1</span>,<span class="var">g</span>)) ≠ <span class="pred">Signal</span>(<span class="pred">In</span>(<span class="const">1</span>,<span class="var">g</span>))
+
+<span class="comment">-- Terminals connected ↔ same signal</span>
+<span class="kw">∀</span><span class="var">t1</span> <span class="var">t2</span> <span class="pred">Connected</span>(<span class="var">t1</span>,<span class="var">t2</span>) <span class="kw">⇒</span> <span class="pred">Signal</span>(<span class="var">t1</span>) = <span class="pred">Signal</span>(<span class="var">t2</span>)
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>// FOL vs. Propositional Logic: Expressiveness Trade-offs</h2>
+            <table>
+                <thead><tr><th>Capability</th><th>Propositional</th><th>First-Order</th></tr></thead>
+                <tbody>
+                    <tr><td>Represent individual objects</td><td>❌</td><td>✅</td></tr>
+                    <tr><td>Express relations between objects</td><td>❌</td><td>✅</td></tr>
+                    <tr><td>Generalize over all/some objects</td><td>❌</td><td>✅</td></tr>
+                    <tr><td>Decidable inference</td><td>✅</td><td>❌ (semi-decidable)</td></tr>
+                    <tr><td>Handle vague concepts</td><td>❌</td><td>❌</td></tr>
+                    <tr><td>Functions on objects</td><td>❌</td><td>✅</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+    <!-- ═══════════════════════ QUIZ ═══════════════════════ -->
+    <div id="quiz" class="panel">
+
+        <div class="card">
+            <h2>// Self-Assessment Quiz</h2>
+            <p>10 questions covering Chapter 8. Select an answer to reveal feedback.</p>
+        </div>
+
+        <div id="quiz-container"></div>
+
+        <div class="quiz-score" id="quiz-score"></div>
+        <button class="reset-btn" onclick="resetQuiz()">↺ Reset Quiz</button>
+
+    </div>
+
+</div>
+
+<script>
+// ─── TAB SWITCHING ────────────────────────────────────────────────
+function showPanel(id, btn) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    btn.classList.add('active');
+}
+
+// ─── KB STEPS ────────────────────────────────────────────────────
+const kbSteps = [
+    {
+        title: "Step 1: Identify the Task",
+        body: `<p>Determine what questions the KB must answer. This scopes the ontology and avoids over-engineering.</p>
+        <ul style="margin-top:10px">
+            <li>What queries will be posed to the KB?</li>
+            <li>What inferences are needed?</li>
+            <li>What level of detail is required?</li>
+        </ul>
+        <p style="margin-top:10px;color:var(--muted);font-size:0.86rem">Example: "Can we determine which rooms in the Wumpus World are safe given percepts so far?"</p>`
+    },
+    {
+        title: "Step 2: Gather Domain Knowledge",
+        body: `<p>Understand the domain deeply before formalizing. Common sources:</p>
+        <ul style="margin-top:10px">
+            <li>Domain experts (interviews, documentation)</li>
+            <li>Textbooks and formal specifications</li>
+            <li>Existing ontologies (e.g., WordNet, Cyc)</li>
+        </ul>
+        <p style="margin-top:10px;color:var(--muted);font-size:0.86rem">⚠ Informal knowledge must be converted to precise logical form — this is often where errors enter.</p>`
+    },
+    {
+        title: "Step 3: Choose a Vocabulary",
+        body: `<p>Decide on the <strong>predicates, functions, and constants</strong> that will represent domain concepts. This is called <em>ontological engineering</em>.</p>
+        <ul style="margin-top:10px">
+            <li>What are the basic categories (unary predicates)?</li>
+            <li>What relations exist between objects?</li>
+            <li>What functions map objects to objects?</li>
+            <li>Are there numerical quantities to represent?</li>
+        </ul>
+        <p style="margin-top:10px;color:var(--muted);font-size:0.86rem">Example: <code style="font-family:monospace">Pit(s), Adjacent(s1,s2), Wumpus(s), Breezy(s), Gold(s)</code></p>`
+    },
+    {
+        title: "Step 4: Encode General Axioms",
+        body: `<p><strong>Axioms</strong> are the general truths of the domain — they hold regardless of the specific problem instance. They capture background knowledge.</p>
+        <ul style="margin-top:10px">
+            <li>Structural constraints (e.g., adjacency rules)</li>
+            <li>Causal rules (e.g., breeze ↔ adjacent pit)</li>
+            <li>Definitional axioms (e.g., safe ≡ ¬pit ∧ ¬wumpus)</li>
+        </ul>
+        <p style="margin-top:10px;color:var(--muted);font-size:0.86rem">Good axioms are reusable across problem instances. Errors here propagate everywhere.</p>`
+    },
+    {
+        title: "Step 5: Encode the Specific Problem",
+        body: `<p>Add <strong>ground facts</strong> specific to the current problem instance — what is known about the particular situation.</p>
+        <ul style="margin-top:10px">
+            <li>Initial percepts and observations</li>
+            <li>Known object constants</li>
+            <li>Specific state assertions</li>
+        </ul>
+        <p style="margin-top:10px;font-family:monospace;font-size:0.82rem;color:#80cbc4">¬Breezy([1,1])  ¬Smelly([1,1])  Safe([1,1])<br>Breezy([2,2])   ¬Smelly([2,2])</p>`
+    },
+    {
+        title: "Step 6: Pose Queries and Debug",
+        body: `<p>Submit queries to the inference engine and verify answers. If results are wrong, revisit earlier steps.</p>
+        <ul style="margin-top:10px">
+            <li>Check axioms against known cases</li>
+            <li>Look for missing axioms (incomplete KB)</li>
+            <li>Look for contradictory axioms (inconsistent KB)</li>
+            <li>Verify vocabulary choices haven't introduced ambiguity</li>
+        </ul>
+        <p style="margin-top:10px;color:var(--muted);font-size:0.86rem">Query example: <code style="font-family:monospace">Safe([1,2])?</code> — should return true given no breeze at [1,1].</p>`
+    }
+];
+
+function showStep(i, btn) {
+    document.querySelectorAll('.step-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const s = kbSteps[i];
+    document.getElementById('step-content').innerHTML = `<h3>${s.title}</h3>${s.body}`;
+}
+
+showStep(0, document.querySelector('.step-btn'));
+
+// ─── WUMPUS GRID ─────────────────────────────────────────────────
+const cells = [
+    // row 4 (top) to row 1 (bottom), left to right
+    {r:4,c:1,emoji:'🌫️',label:'[1,4]',fol:`-- Percepts at [1,4]\nBreezy([1,4])      -- agent perceives breeze\n¬Smelly([1,4])     -- no stench\n-- Inference:\n∃r Adjacent(r,[1,4]) ∧ Pit(r)\n-- [2,4] or [1,3] may contain a pit`},
+    {r:4,c:2,emoji:'⬛',label:'[2,4]',fol:`-- Unvisited: [2,4]\n-- No assertions yet\n-- Unknown(Pit([2,4]))\n-- Unknown(Wumpus([2,4]))`},
+    {r:4,c:3,emoji:'⬛',label:'[3,4]',fol:`-- Unvisited: [3,4]\nUnknown(Pit([3,4]))\nUnknown(Wumpus([3,4]))`},
+    {r:4,c:4,emoji:'⬛',label:'[4,4]',fol:`-- Unvisited: [4,4]\nUnknown(Pit([4,4]))\nUnknown(Wumpus([4,4]))`},
+    {r:3,c:1,emoji:'🌫️',label:'[1,3]',fol:`-- Percepts at [1,3]\nBreezy([1,3])      -- breeze again\n¬Smelly([1,3])     -- no stench\n-- Combined with [2,1] breeze info:\n-- Pit([3,1]) is likely`},
+    {r:3,c:2,emoji:'💀',label:'[2,3]',fol:`-- [2,3] contains a Pit!\nPit([2,3])\n-- Explains breeze at [1,3] and [2,2]:\n∀s Breezy(s) ⟺ ∃r Adjacent(r,s) ∧ Pit(r)`},
+    {r:3,c:3,emoji:'👑',label:'[3,3]',fol:`-- [3,3] contains the Gold!\nGold([3,3])\nGlitter([3,3])     -- agent would perceive this\nSafe([3,3])        -- no pit or wumpus here`},
+    {r:3,c:4,emoji:'⬛',label:'[4,3]',fol:`-- Unvisited: [4,3]\nUnknown(Pit([4,3]))\nUnknown(Wumpus([4,3]))`},
+    {r:2,c:1,emoji:'😱',label:'[1,2]',fol:`-- [1,2]: Wumpus adjacent!\nSmelly([1,2])      -- stench perceived\n¬Breezy([1,2])     -- no breeze\n-- Inference:\n∃r Adjacent(r,[1,2]) ∧ Wumpus(r)\n-- Wumpus is at [1,3] or [2,2]`},
+    {r:2,c:2,emoji:'🐛',label:'[2,2]',fol:`-- [2,2]: Wumpus location!\nWumpus([2,2])\nSmelly([2,2])      -- adjacent to itself\n¬Safe([2,2])       -- not safe\n¬Pit([2,2])        -- pit and wumpus don't overlap`},
+    {r:2,c:3,emoji:'⬛',label:'[3,2]',fol:`-- Unvisited: [3,2]\nUnknown(Pit([3,2]))\nUnknown(Wumpus([3,2]))`},
+    {r:2,c:4,emoji:'⬛',label:'[4,2]',fol:`-- Unvisited: [4,2]\nUnknown(Pit([4,2]))\nUnknown(Wumpus([4,2]))`},
+    {r:1,c:1,emoji:'🏠',label:'[1,1]',fol:`-- Start: [1,1] — always safe\n¬Pit([1,1])        -- guaranteed safe start\n¬Wumpus([1,1])     -- guaranteed safe start\nSafe([1,1])\n¬Breezy([1,1])     -- no adjacent pits\n¬Smelly([1,1])     -- no adjacent wumpus`},
+    {r:1,c:2,emoji:'💨',label:'[2,1]',fol:`-- [2,1]: Breeze!\nBreezy([2,1])      -- agent perceives breeze\n¬Smelly([2,1])     -- no stench\nSafe([2,1])        -- visited, no wumpus/pit here\n-- Inference:\n∃r Adjacent(r,[2,1]) ∧ Pit(r)\n-- Pit([3,1]) or Pit([2,2]) is possible`},
+    {r:1,c:3,emoji:'💀',label:'[3,1]',fol:`-- [3,1]: Contains a Pit!\nPit([3,1])\n¬Safe([3,1])       -- not safe!\n-- Explains breeze at [2,1]:\nBreezy([2,1]) because Adjacent([3,1],[2,1]) ∧ Pit([3,1])`},
+    {r:1,c:4,emoji:'⬛',label:'[4,1]',fol:`-- Unvisited: [4,1]\nUnknown(Pit([4,1]))\nUnknown(Wumpus([4,1]))`},
+];
+
+const grid = document.getElementById('wgrid');
+cells.forEach((c, i) => {
+    const div = document.createElement('div');
+    div.className = 'w-cell' + (c.emoji !== '⬛' ? ' revealed' : '');
+    div.innerHTML = `<span class="cell-label">${c.label}</span>${c.emoji !== '⬛' ? c.emoji : '?'}`;
+    div.title = c.label;
+    div.addEventListener('click', () => {
+        document.getElementById('fol-out').textContent = c.fol;
+        document.querySelectorAll('.w-cell').forEach(x => x.style.outline = 'none');
+        div.style.outline = '2px solid var(--accent)';
+    });
+    grid.appendChild(div);
+});
+
+// ─── QUIZ ─────────────────────────────────────────────────────────
+const questions = [
+    {
+        q: "Which of the following is a valid FOL sentence using the universal quantifier correctly?",
+        opts: [
+            "∀x King(x) ∧ Person(x)",
+            "∀x King(x) ⇒ Person(x)",
+            "∀x King(x) ∨ Person(x)",
+            "∀x King(x) ⟺ Person(x)"
+        ],
+        ans: 1,
+        exp: "∀ should be paired with ⇒ for conditional statements. Option A claims everything is both a king and a person. Option B correctly says 'if x is a king, then x is a person'."
+    },
+    {
+        q: "What are the three components of an FOL model (possible world)?",
+        opts: [
+            "Sentences, connectives, and quantifiers",
+            "A domain of objects, a set of predicates, and a set of functions",
+            "A domain of objects, an interpretation mapping symbols to domain elements, and objects",
+            "Constants, variables, and relations"
+        ],
+        ans: 2,
+        exp: "An FOL model has (1) a non-empty domain of objects, (2) an interpretation that maps constants → objects, predicates → relations, functions → functions on the domain, and (3) the domain objects themselves."
+    },
+    {
+        q: "Which sentence correctly reads: 'There exists a crown on John's head'?",
+        opts: [
+            "∃x Crown(x) ⇒ OnHead(x, John)",
+            "∀x Crown(x) ∧ OnHead(x, John)",
+            "∃x Crown(x) ∧ OnHead(x, John)",
+            "∃x Crown(x) ∨ OnHead(x, John)"
+        ],
+        ans: 2,
+        exp: "∃ should be paired with ∧. Option A is wrong — it's vacuously true if no crowns exist (implication with false antecedent is true). Option C correctly requires at least one crown that is on John's head."
+    },
+    {
+        q: "What is the key ontological difference between propositional logic and FOL?",
+        opts: [
+            "FOL uses probability; propositional logic uses truth values",
+            "Propositional logic commits only to facts; FOL commits to objects and relations",
+            "FOL is decidable; propositional logic is not",
+            "Propositional logic allows quantifiers; FOL does not"
+        ],
+        ans: 1,
+        exp: "Propositional logic's ontology consists only of facts. FOL's richer ontology includes objects, relations among objects, and functions on objects — which is what gives it expressive power."
+    },
+    {
+        q: "What does the sentence <code>∀x ∃y Loves(x, y)</code> mean?",
+        opts: [
+            "There is someone loved by everyone",
+            "Everyone loves everyone",
+            "Everyone loves someone (possibly different for each person)",
+            "Someone loves everyone"
+        ],
+        ans: 2,
+        exp: "∀x ∃y means 'for each x, there exists a y (which may differ per x)'. So: for every person, there is at least one person they love. This is different from ∃y ∀x Loves(x,y), which says one specific person is loved by all."
+    },
+    {
+        q: "Which of the following is NOT one of the five desirable properties of a knowledge representation language according to Russell & Norvig?",
+        opts: [
+            "Declarative",
+            "Compositional",
+            "Probabilistic",
+            "Unambiguous"
+        ],
+        ans: 2,
+        exp: "The five properties are: declarative, compositional, expressive, context-independent, and unambiguous. 'Probabilistic' is not one of them — that belongs to a different epistemological framework."
+    },
+    {
+        q: "In the Wumpus World FOL encoding, which axiom correctly relates breeze to pits?",
+        opts: [
+            "∀s Pit(s) ⇒ Breezy(s)",
+            "∀s Breezy(s) ⟺ ∃r Adjacent(r, s) ∧ Pit(r)",
+            "∃s Breezy(s) ∧ ∀r Adjacent(r, s) ⇒ Pit(r)",
+            "∀s Breezy(s) ⇒ Pit(s)"
+        ],
+        ans: 1,
+        exp: "A square is breezy if and only if at least one adjacent square contains a pit. Option B captures this biconditional correctly. Option A says pits cause breeze in the same square (wrong direction). Option D says breezy squares contain pits (wrong)."
+    },
+    {
+        q: "What is the epistemological commitment of first-order logic?",
+        opts: [
+            "True / False / Degree of belief",
+            "True / False / Unknown",
+            "Degree of truth in [0,1]",
+            "Only True or False"
+        ],
+        ans: 1,
+        exp: "Both propositional and first-order logic share the same epistemological commitment: sentences can be True, False, or Unknown (i.e., not yet determined). This distinguishes them from probabilistic or fuzzy approaches."
+    },
+    {
+        q: "Which of the following correctly uses equality to express 'Exactly one wumpus exists'?",
+        opts: [
+            "∀x Wumpus(x)",
+            "∃x Wumpus(x)",
+            "∃x Wumpus(x) ∧ ∀y Wumpus(y) ⇒ y = x",
+            "∃x ∃y Wumpus(x) ∧ Wumpus(y) ∧ x ≠ y"
+        ],
+        ans: 2,
+        exp: "Option C says: there exists a wumpus x such that for any wumpus y, y must be the same object as x. This enforces uniqueness. Option D says at least two distinct wumpuses exist — the opposite of what we want."
+    },
+    {
+        q: "Why do both propositional and first-order logic struggle with domains like politics or cuisine?",
+        opts: [
+            "They cannot represent negation",
+            "They lack quantifiers",
+            "They cannot handle vague or graded propositions",
+            "They require probabilistic reasoning"
+        ],
+        ans: 2,
+        exp: "Both logics require propositions to have precise, fixed truth values. Vague concepts like 'tall', 'spicy', or 'politically moderate' don't map cleanly to True/False — fuzzy logic or probabilistic representations are better suited here."
+    }
+];
+
+let answered = new Array(questions.length).fill(false);
+let score = 0;
+
+function buildQuiz() {
+    const cont = document.getElementById('quiz-container');
+    cont.innerHTML = '';
+    questions.forEach((q, qi) => {
+        const div = document.createElement('div');
+        div.className = 'quiz-q';
+        div.id = `q${qi}`;
+        div.innerHTML = `<div class="q-text"><strong>${qi+1}.</strong> ${q.q}</div>
+            <div class="options">${q.opts.map((o,oi)=>`<button class="opt-btn" onclick="answer(${qi},${oi},this)">${o}</button>`).join('')}</div>
+            <div class="feedback" id="fb${qi}"></div>`;
+        cont.appendChild(div);
+    });
+    updateScore();
+}
+
+function answer(qi, oi, btn) {
+    if (answered[qi]) return;
+    answered[qi] = true;
+    const q = questions[qi];
+    const opts = btn.closest('.options').querySelectorAll('.opt-btn');
+    opts.forEach(b => b.disabled = true);
+    const fb = document.getElementById(`fb${qi}`);
+    if (oi === q.ans) {
+        btn.classList.add('correct');
+        fb.className = 'feedback correct show';
+        fb.textContent = '✓ Correct. ' + q.exp;
+        score++;
+    } else {
+        btn.classList.add('wrong');
+        opts[q.ans].classList.add('correct');
+        fb.className = 'feedback wrong show';
+        fb.textContent = '✗ Incorrect. ' + q.exp;
+    }
+    updateScore();
+}
+
+function updateScore() {
+    const done = answered.filter(Boolean).length;
+    document.getElementById('quiz-score').textContent =
+        done === 0 ? '' : `Score: ${score} / ${done} answered (${questions.length - done} remaining)`;
+}
+
+function resetQuiz() {
+    answered = new Array(questions.length).fill(false);
+    score = 0;
+    buildQuiz();
+}
+
+buildQuiz();
+</script>
+</body>
+</html>
