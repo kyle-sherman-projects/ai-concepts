@@ -27,12 +27,18 @@ Based on Russell & Norvig's *Artificial Intelligence: A Modern Approach* (4th Ed
 ├── Chapter 7
 │   └── ch7_logical_agents.html                  — Logical agents, propositional logic, inference & SATPLAN
 │
+├── Chapter 8
+│   └── ch8_first_order_logic.html               — First-order logic: syntax, semantics & knowledge engineering
+│
+├── Chapter 9
+│   └── ch9_fol_inference.html                   — Inference in first-order logic: unification, resolution & theorem proving
+│
 ├── homework/
 │   ├── bfs_maze.py
 │   ├── dfs_maze.py
 │   ├── maze_a-star_explained.ipynb
 │   ├── maze_bfs_explained.ipynb
-│   └── maze_bfs_vs_ucs_explained.ipynb
+│   ├── maze_bfs_vs_ucs_explained.ipynb
 │   └── probability_problems_hw.html
 
 └── (more chapters added as course progresses)
@@ -66,6 +72,16 @@ Based on Russell & Norvig's *Artificial Intelligence: A Modern Approach* (4th Ed
 | File | Type | Description |
 |------|------|-------------|
 | `ch7_logical_agents.html` | Interactive | Knowledge-based agents, Wumpus World step-through, propositional syntax & semantics, interactive truth table, CNF conversion walkthrough, resolution refutation demo, DPLL & WalkSAT, forward/backward chaining, and SATPLAN — includes 10-question self-quiz |
+
+### Chapter 8 — First-Order Logic
+| File | Type | Description |
+|------|------|-------------|
+| `ch8_first_order_logic.html` | Interactive | First-order logic syntax and semantics, constants/predicates/functions/quantifiers, knowledge engineering, and comparison with propositional logic |
+
+### Chapter 9 — Inference in First-Order Logic
+| File | Type | Description |
+|------|------|-------------|
+| `ch9_fol_inference.html` | Interactive | Unification, generalized Modus Ponens, forward and backward chaining in FOL, resolution theorem proving, and completeness results |
 
 ---
 
@@ -103,7 +119,7 @@ Annotated Jupyter notebooks explaining the reasoning behind each implementation,
 | 4 | Ch. 4–5 | Informed Search, Game Playing | ✅ Complete |
 | * | Ch. 6 | Constraint Satisfaction Problems | ✅ Complete |
 | 5 | Ch. 7–8 | Logical Agents, First-Order Logic | ✅ Complete |
-| 6 | Ch. 9–10 | Inference, Knowledge Representation | 🔲 Planned |
+| 6 | Ch. 9–10 | Inference, Knowledge Representation | ✅ Complete |
 | 7 | Ch. 12–13 | Probabilistic Reasoning | 🔲 Planned |
 | 8 | Ch. 13–14 | Bayesian Networks, MDPs | 🔲 Planned |
 | 9 | Ch. 19–20 | Machine Learning | 🔲 Planned |
